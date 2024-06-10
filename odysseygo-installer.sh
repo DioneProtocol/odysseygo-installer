@@ -11,23 +11,23 @@ if ((EUID == 0)); then
     exit 1
 fi
 
-#helper function to create avalanchego.service file
+#helper function to create odysseygo.service file
 create_service_file () {
-  rm -f avalanchego.service
-  echo "[Unit]">>avalanchego.service
-  echo "Description=AvalancheGo systemd service">>avalanchego.service
-  echo "StartLimitIntervalSec=0">>avalanchego.service
-  echo "[Service]">>avalanchego.service
-  echo "Type=simple">>avalanchego.service
-  echo "User=$(whoami)">>avalanchego.service
-  echo "WorkingDirectory=$HOME">>avalanchego.service
-  echo "ExecStart=$HOME/avalanche-node/avalanchego --config-file=$HOME/.avalanchego/configs/node.json">>avalanchego.service
-  echo "LimitNOFILE=32768">>avalanchego.service
-  echo "Restart=always">>avalanchego.service
-  echo "RestartSec=1">>avalanchego.service
-  echo "[Install]">>avalanchego.service
-  echo "WantedBy=multi-user.target">>avalanchego.service
-  echo "">>avalanchego.service
+  rm -f odysseygo.service
+  echo "[Unit]">>odysseygo.service
+  echo "Description=OdysseyGo systemd service">>odysseygo.service
+  echo "StartLimitIntervalSec=0">>odysseygo.service
+  echo "[Service]">>odysseygo.service
+  echo "Type=simple">>odysseygo.service
+  echo "User=$(whoami)">>odysseygo.service
+  echo "WorkingDirectory=$HOME">>odysseygo.service
+  echo "ExecStart=$HOME/odyssey-node/odysseygo --config-file=$HOME/.odysseygo/configs/node.json">>odysseygo.service
+  echo "LimitNOFILE=32768">>odysseygo.service
+  echo "Restart=always">>odysseygo.service
+  echo "RestartSec=1">>odysseygo.service
+  echo "[Install]">>odysseygo.service
+  echo "WantedBy=multi-user.target">>odysseygo.service
+  echo "">>odysseygo.service
 }
 
 create_config_file () {
@@ -42,8 +42,8 @@ create_config_file () {
   if [ "$indexOpt" = "true" ]; then
     echo "  \"index-enabled\": true,">>node.json
   fi
-  if [ "$fujiOpt" = "true" ]; then
-    echo "  \"network-id\": \"fuji\",">>node.json
+  if [ "$testnetOpt" = "true" ]; then
+    echo "  \"network-id\": \"testnet\",">>node.json
   fi
   if [ "$dbdirOpt" != "no" ]; then
     echo "  \"db-dir\": \"$dbdirOpt\",">>node.json
@@ -54,8 +54,8 @@ create_config_file () {
     echo "  \"public-ip\": \"$foundIP\"">>node.json
   fi
   echo "}" >>node.json
-  mkdir -p $HOME/.avalanchego/configs
-  cp -f node.json $HOME/.avalanchego/configs/node.json
+  mkdir -p $HOME/.odysseygo/configs
+  cp -f node.json $HOME/.odysseygo/configs/node.json
 
   rm -f config.json
   echo "{" >>config.json
@@ -74,15 +74,15 @@ create_config_file () {
     echo "  \"pruning-enabled\": false">>config.json
   fi
   echo "}" >>config.json
-  mkdir -p $HOME/.avalanchego/configs/chains/C
-  cp -f config.json $HOME/.avalanchego/configs/chains/C/config.json
+  mkdir -p $HOME/.odysseygo/configs/chains/D
+  cp -f config.json $HOME/.odysseygo/configs/chains/D/config.json
 }
 
 remove_service_file () {
-  if test -f "/etc/systemd/system/avalanchego.service"; then
-    sudo systemctl stop avalanchego
-    sudo systemctl disable avalanchego
-    sudo rm /etc/systemd/system/avalanchego.service
+  if test -f "/etc/systemd/system/odysseygo.service"; then
+    sudo systemctl stop odysseygo
+    sudo systemctl disable odysseygo
+    sudo rm /etc/systemd/system/odysseygo.service
   fi
 }
 
@@ -152,19 +152,19 @@ usage () {
   echo "   --help            Shows this message"
   echo "   --list            Lists 10 newest versions available to install"
   echo "   --reinstall       Run the installer from scratch, overwriting the old service file and node configuration"
-  echo "   --remove          Remove the system service and AvalancheGo binaries and exit"
+  echo "   --remove          Remove the system service and OdysseyGo binaries and exit"
   echo ""
   echo "   --version <tag>          Installs <tag> version, default is the latest"
   echo "   --ip dynamic|static|<IP> Uses dynamic, static (autodetect) or provided public IP, will ask if not provided"
   echo "   --rpc private|public     Open RPC port (9650) to private or public network interfaces, will ask if not provided"
   echo "   --archival               If provided, will disable state pruning, defaults to pruning enabled"
-  echo "   --state-sync on|off      If provided explicitly turns C-Chain state sync on or off"
+  echo "   --state-sync on|off      If provided explicitly turns D-Chain state sync on or off"
   echo "   --index                  If provided, will enable indexer and Index API, defaults to disabled"
-  echo "   --db-dir <path>          Full path to the database directory, defaults to $HOME/.avalanchego/db"
-  echo "   --fuji                   Connect to Fuji testnet, defaults to mainnet if omitted"
+  echo "   --db-dir <path>          Full path to the database directory, defaults to $HOME/.odysseygo/db"
+  echo "   --testnet                Connect to testnet, defaults to mainnet if omitted"
   echo "   --admin                  Enable Admin API, defaults to disabled if omitted"
   echo ""
-  echo "Run without any options, script will install or upgrade AvalancheGo to latest available version. Node config"
+  echo "Run without any options, script will install or upgrade OdysseyGo to latest available version. Node config"
   echo "options for version, ip and others will be ignored when upgrading the node, run with --reinstall to change config."
   echo "Reinstall will not modify the database or NodeID definition, it will overwrite node and chain configs."
   exit 0
@@ -172,7 +172,7 @@ usage () {
 
 list_versions () {
   echo "Available versions:"
-  wget -q -O - https://api.github.com/repos/ava-labs/avalanchego/releases \
+  wget -q -O - https://api.github.com/repos/DioneProtocol/odysseygo/releases \
   | grep tag_name \
   | sed 's/.*: "\(.*\)".*/\1/' \
   | head
@@ -184,7 +184,7 @@ usage_error () { echo >&2 "$(basename $0):  $1"; exit 2; }
 assert_argument () { test "$1" != "$EOL" || usage_error "$2 requires an argument"; }
 
 #initialise options
-fujiOpt="no"
+testnetOpt="no"
 adminOpt="no"
 rpcOpt="ask"
 indexOpt="no"
@@ -193,7 +193,7 @@ dbdirOpt="no"
 ipOpt="ask"
 stateOpt="?"
 
-echo "AvalancheGo installer"
+echo "OdysseyGo installer"
 echo "---------------------"
 
 # process command line arguments
@@ -213,9 +213,9 @@ if [ "$#" != 0 ]; then
         echo "Removing the service..."
         remove_service_file
         echo "Remove node binaries..."
-        rm -rf $HOME/avalanche-node
+        rm -rf $HOME/odyssey-node
         echo "Done."
-        echo "AvalancheGo removed. Working directory ($HOME/.avalanchego/) has been preserved."
+        echo "OdysseyGo removed. Working directory ($HOME/.odysseygo/) has been preserved."
         exit 0
         ;;
       --help) usage ;;
@@ -225,7 +225,7 @@ if [ "$#" != 0 ]; then
       --state-sync) assert_argument "$1" "$opt"; stateOpt="$1"; shift;;
       --index) indexOpt='true';;
       --db-dir) assert_argument "$1" "$opt"; dbdirOpt="$1"; shift;;
-      --fuji) fujiOpt='true';;
+      --testnet) testnetOpt='true';;
       --admin) adminOpt='true';;
 
       -|''|[!-]*) set -- "$@" "$opt";;                                          # positional argument, rotate to the end
@@ -265,25 +265,25 @@ else
   echo "Exiting."
   exit 1
 fi
-if test -f "/etc/systemd/system/avalanchego.service"; then
-  foundAvalancheGo=true
-  echo "Found AvalancheGo systemd service already installed, switching to upgrade mode."
+if test -f "/etc/systemd/system/odysseygo.service"; then
+  foundOdysseyGo=true
+  echo "Found OdysseyGo systemd service already installed, switching to upgrade mode."
   echo "Stopping service..."
-  sudo systemctl stop avalanchego
+  sudo systemctl stop odysseygo
 else
-  foundAvalancheGo=false
+  foundOdysseyGo=false
 fi
 # download and copy node files
-mkdir -p /tmp/avalanchego-install               #make a directory to work in
-rm -rf /tmp/avalanchego-install/*               #clean up in case previous install didn't
-cd /tmp/avalanchego-install
+mkdir -p /tmp/odysseygo-install               #make a directory to work in
+rm -rf /tmp/odysseygo-install/*               #clean up in case previous install didn't
+cd /tmp/odysseygo-install
 
 version=${version:-latest}
 echo "Looking for $getArch version $version..."
 if [ "$version" = "latest" ]; then
-  fileName="$(curl -s https://api.github.com/repos/ava-labs/avalanchego/releases/latest | grep "avalanchego-linux-$getArch.*tar\(.gz\)*\"" | cut -d : -f 2,3 | tr -d \" | cut -d , -f 2)"
+  fileName="$(curl -s https://api.github.com/repos/DioneProtocol/odysseygo/releases/latest | grep "odysseygo-linux-$getArch.*tar\(.gz\)*\"" | cut -d : -f 2,3 | tr -d \" | cut -d , -f 2)"
 else
-  fileName="https://github.com/ava-labs/avalanchego/releases/download/$version/avalanchego-linux-$getArch-$version.tar.gz"
+  fileName="https://github.com/DioneProtocol/odysseygo/releases/download/$version/odysseygo-linux-$getArch-$version.tar.gz"
 fi
 if [[ `wget -S --spider $fileName  2>&1 | grep 'HTTP/1.1 200 OK'` ]]; then
   echo "Node version found."
@@ -291,11 +291,11 @@ if [[ `wget -S --spider $fileName  2>&1 | grep 'HTTP/1.1 200 OK'` ]]; then
   wget -nv --show-progress $fileName
 
   echo "Unpacking node files..."
-  mkdir -p $HOME/avalanche-node
-  tar xvf avalanchego-linux*.tar.gz -C $HOME/avalanche-node --strip-components=1;
-  mkdir -p $HOME/.avalanchego/plugins
-  rm avalanchego-linux-*.tar.gz
-  echo "Node files unpacked into $HOME/avalanche-node"
+  mkdir -p $HOME/odyssey-node
+  tar xvf odysseygo-linux*.tar.gz -C $HOME/odyssey-node --strip-components=1;
+  mkdir -p $HOME/.odysseygo/plugins
+  rm odysseygo-linux-*.tar.gz
+  echo "Node files unpacked into $HOME/odyssey-node"
 else
   shouldBuild=true
   if ! command -v git >/dev/null 2>&1 ; then
@@ -312,56 +312,56 @@ else
   fi
   if [ "$shouldBuild" = "false" ]; then
     echo "One or more building tools are missing. Exiting."
-    if [ "$foundAvalancheGo" = "true" ]; then
+    if [ "$foundOdysseyGo" = "true" ]; then
       echo "Restarting service..."
-      sudo systemctl start avalanchego
+      sudo systemctl start odysseygo
     fi
     exit 1
   fi
 
-  echo "Unable to find AvalancheGo release $version. Attempting to build $version from source."
-  mkdir -p avalanchego
-  cd avalanchego
+  echo "Unable to find OdysseyGo release $version. Attempting to build $version from source."
+  mkdir -p odysseygo
+  cd odysseygo
   git init
-  git remote add origin https://github.com/ava-labs/avalanchego
+  git remote add origin https://github.com/DioneProtocol/odysseygo
   git fetch --depth 1 origin $version || {
-    echo "Unable to find AvalancheGo commit $version. Exiting."
-    if [ "$foundAvalancheGo" = "true" ]; then
+    echo "Unable to find OdysseyGo commit $version. Exiting."
+    if [ "$foundOdysseyGo" = "true" ]; then
       echo "Restarting service..."
-      sudo systemctl start avalanchego
+      sudo systemctl start odysseygo
     fi
     exit 1
   }
   git checkout $version
   ./scripts/build.sh || {
-    echo "Unable to build AvalancheGo commit $version. Exiting."
-    if [ "$foundAvalancheGo" = "true" ]; then
+    echo "Unable to build OdysseyGo commit $version. Exiting."
+    if [ "$foundOdysseyGo" = "true" ]; then
       echo "Restarting service..."
-      sudo systemctl start avalanchego
+      sudo systemctl start odysseygo
     fi
     exit 1
   }
 
   echo "Moving node binary..."
-  mkdir -p $HOME/avalanche-node
-  cp -r ./build/* $HOME/avalanche-node
-  mkdir -p $HOME/.avalanchego/plugins
+  mkdir -p $HOME/odyssey-node
+  cp -r ./build/* $HOME/odyssey-node
+  mkdir -p $HOME/.odysseygo/plugins
   cd ..
-  rm -rf avalanchego
-  echo "Node binary move to $HOME/avalanche-node"
+  rm -rf odysseygo
+  echo "Node binary move to $HOME/odyssey-node"
 fi
 echo
 # on RHEL based systems, selinux prevents systemd running execs from home-dir, lets change this
 if [ "$osType" = "RHEL" ]; then
   # only way to make idempotent
-  sudo semanage fcontext -a -t bin_t "$HOME/avalanche-node/avalanchego" || sudo semanage fcontext -m -t bin_t "$HOME/avalanche-node/avalanchego"
-  sudo restorecon -Fv "$HOME/avalanche-node/avalanchego"
+  sudo semanage fcontext -a -t bin_t "$HOME/odyssey-node/odysseygo" || sudo semanage fcontext -m -t bin_t "$HOME/odyssey-node/odysseygo"
+  sudo restorecon -Fv "$HOME/odyssey-node/odysseygo"
 fi
-if [ "$foundAvalancheGo" = "true" ]; then
+if [ "$foundOdysseyGo" = "true" ]; then
   echo "Node upgraded, starting service..."
-  sudo systemctl start avalanchego
+  sudo systemctl start odysseygo
   echo "New node version:"
-  $HOME/avalanche-node/avalanchego --version
+  $HOME/odyssey-node/odysseygo --version
   echo "Done!"
   exit 0
 fi
@@ -457,7 +457,7 @@ if [ "$archivalOpt" = "true" ]; then
   echo ""
 fi
 if [ "$stateOpt" = "?" ]; then
-  echo "Bootstrapping the C-Chain can be done by downloading and replaying the whole chain history, which can take"
+  echo "Bootstrapping the D-Chain can be done by downloading and replaying the whole chain history, which can take"
   echo "a lot of time (up to a week or more!), but populates the local database with complete state transitions."
   echo "Alternatively, node can bootstrap using state sync, to fetch only the latest chain state, which is much faster."
 fi
@@ -466,20 +466,20 @@ do
   read -p "Do you want state sync bootstrapping to be turned on or off? [on, off]: " stateOpt
 done
 if [ "$stateOpt" = "on" ]; then
-  echo "State sync will be enabled. Node will not replay the whole C-Chain transaction history,"
+  echo "State sync will be enabled. Node will not replay the whole D-Chain transaction history,"
   echo "instead it will only download the current chain state."
   echo ""
 fi
 if [ "$stateOpt" = "off" ]; then
-  echo "State sync is disabled. Node will download and replay the whole C-Chain transaction history."
+  echo "State sync is disabled. Node will download and replay the whole D-Chain transaction history."
   echo ""
 fi
 if [ "$adminOpt" = "true" ]; then
   echo "Admin API on the node is enabled."
   echo ""
 fi
-if [ "$fujiOpt" = "true" ]; then
-  echo "Node is connected to the Fuji test network."
+if [ "$testnetOpt" = "true" ]; then
+  echo "Node is connected to the test network."
   echo ""
 fi
 if [ "$dbdirOpt" != "no" ]; then
@@ -488,21 +488,20 @@ if [ "$dbdirOpt" != "no" ]; then
 fi
 create_config_file
 create_service_file
-chmod 644 avalanchego.service
-sudo cp -f avalanchego.service /etc/systemd/system/avalanchego.service
+chmod 644 odysseygo.service
+sudo cp -f odysseygo.service /etc/systemd/system/odysseygo.service
 sudo systemctl daemon-reload
-sudo systemctl start avalanchego
-sudo systemctl enable avalanchego
+sudo systemctl start odysseygo
+sudo systemctl enable odysseygo
 echo
 echo "Done!"
 echo
 echo "Your node should now be bootstrapping."
-echo "Node configuration file is $HOME/.avalanchego/configs/node.json"
-echo "C-Chain configuration file is $HOME/.avalanchego/configs/chains/C/config.json"
-echo "Plugin directory, for storing subnet VM binaries, is $HOME/.avalanchego/plugins"
+echo "Node configuration file is $HOME/.odysseygo/configs/node.json"
+echo "D-Chain configuration file is $HOME/.odysseygo/configs/chains/D/config.json"
+echo "Plugin directory, for storing subnet VM binaries, is $HOME/.odysseygo/plugins"
 echo "To check that the service is running use the following command (q to exit):"
-echo "sudo systemctl status avalanchego"
+echo "sudo systemctl status odysseygo"
 echo "To follow the log use (ctrl-c to stop):"
-echo "sudo journalctl -u avalanchego -f"
+echo "sudo journalctl -u odysseygo -f"
 echo
-echo "Reach us over on https://chat.avax.network if you're having problems."
