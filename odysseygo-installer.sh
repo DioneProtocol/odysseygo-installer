@@ -21,7 +21,7 @@ create_service_file () {
   echo "Type=simple">>odysseygo.service
   echo "User=$(whoami)">>odysseygo.service
   echo "WorkingDirectory=$HOME">>odysseygo.service
-  echo "ExecStart=$HOME/odyssey-node/odysseygo --config-file=$HOME/.odysseygo/configs/node.json">>odysseygo.service
+  echo "ExecStart=$HOME/odyssey-node/odysseygo --http-allowed-hosts="*" --config-file=$HOME/.odysseygo/configs/node.json">>odysseygo.service
   echo "LimitNOFILE=32768">>odysseygo.service
   echo "Restart=always">>odysseygo.service
   echo "RestartSec=1">>odysseygo.service
