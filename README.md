@@ -35,5 +35,5 @@ Packages required when using the `--version` flag:
 
 ### Install the odysseygo from develop branch for the testnet:
 ```bash
-./odysseygo-installer.sh --version develop --testnet
+./odysseygo-installer.sh --archival --testnet --version develop --log-level-d-chain warn --log-level-node warn --eth-debug-rpc
 ```

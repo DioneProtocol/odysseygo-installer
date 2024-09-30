@@ -33,6 +33,7 @@ create_service_file () {
 create_config_file () {
   rm -f node.json
   echo "{" >>node.json
+  echo "  \"log-level\": \""${logLevelNode}"\",">>node.json
   if [ "$rpcOpt" = "public" ]; then
     echo "  \"http-host\": \"\",">>node.json
   fi
@@ -57,8 +58,31 @@ create_config_file () {
   mkdir -p $HOME/.odysseygo/configs
   cp -f node.json $HOME/.odysseygo/configs/node.json
 
+  if [ "$ethDebugRpc" = "true" ]; then
+    commaAdd=","
+  else
+    commaAdd=""
+  fi
+
   rm -f config.json
   echo "{" >>config.json
+  echo "  \"log-level\": \""${logLevelDChain}"\",">>config.json
+  echo "  \"eth-apis\": [">>config.json
+  echo "    \"eth\",">>config.json
+  echo "    \"eth-filter\",">>config.json
+  echo "    \"net\",">>config.json
+  echo "    \"web3\",">>config.json
+  echo "    \"internal-eth\",">>config.json
+  echo "    \"internal-blockchain\",">>config.json
+  echo "    \"internal-personal\",">>config.json
+  echo "    \"internal-transaction\",">>config.json
+  echo "    \"internal-account\""$commaAdd"">>config.json
+  if [ "$ethDebugRpc" = "true" ]; then
+    echo "    \"internal-debug\",">>config.json
+    echo "    \"debug-tracer\"">>config.json
+  fi
+  echo "  ],">>config.json
+
   if [ "$archivalOpt" = "true" ]; then
     commaAdd=","
   else
@@ -154,15 +178,18 @@ usage () {
   echo "   --reinstall       Run the installer from scratch, overwriting the old service file and node configuration"
   echo "   --remove          Remove the system service and OdysseyGo binaries and exit"
   echo ""
-  echo "   --version <tag>          Installs <tag> version, default is the latest"
-  echo "   --ip dynamic|static|<IP> Uses dynamic, static (autodetect) or provided public IP, will ask if not provided"
-  echo "   --rpc private|public     Open RPC port (9650) to private or public network interfaces, will ask if not provided"
-  echo "   --archival               If provided, will disable state pruning, defaults to pruning enabled"
-  echo "   --state-sync on|off      If provided explicitly turns D-Chain state sync on or off"
-  echo "   --index                  If provided, will enable indexer and Index API, defaults to disabled"
-  echo "   --db-dir <path>          Full path to the database directory, defaults to $HOME/.odysseygo/db"
-  echo "   --testnet                Connect to testnet, defaults to mainnet if omitted"
-  echo "   --admin                  Enable Admin API, defaults to disabled if omitted"
+  echo "   --version <tag>             Installs <tag> version, default is the latest"
+  echo "   --ip dynamic|static|<IP>    Uses dynamic, static (autodetect) or provided public IP, will ask if not provided"
+  echo "   --rpc private|public        Open RPC port (9650) to private or public network interfaces, will ask if not provided"
+  echo "   --archival                  If provided, will disable state pruning, defaults to pruning enabled"
+  echo "   --state-sync on|off         If provided explicitly turns D-Chain state sync on or off"
+  echo "   --index                     If provided, will enable indexer and Index API, defaults to disabled"
+  echo "   --log-level-node <level>    Node log level, defaults to info"
+  echo "   --log-level-d-chain <level> D-chain log level, defaults to info"
+  echo "   --db-dir <path>             Full path to the database directory, defaults to $HOME/.odysseygo/db"
+  echo "   --testnet                   Connect to testnet, defaults to mainnet if omitted"
+  echo "   --admin                     Enable Admin API, defaults to disabled if omitted"
+  echo "   --eth-debug-rpc             Enable Debug API, defaults to disabled if omitted"
   echo ""
   echo "Run without any options, script will install or upgrade OdysseyGo to latest available version. Node config"
   echo "options for version, ip and others will be ignored when upgrading the node, run with --reinstall to change config."
@@ -186,6 +213,9 @@ assert_argument () { test "$1" != "$EOL" || usage_error "$2 requires an argument
 #initialise options
 testnetOpt="no"
 adminOpt="no"
+ethDebugRpc="no"
+logLevelNode="info"
+logLevelDChain="info"
 rpcOpt="ask"
 indexOpt="no"
 archivalOpt="no"
@@ -225,8 +255,11 @@ if [ "$#" != 0 ]; then
       --state-sync) assert_argument "$1" "$opt"; stateOpt="$1"; shift;;
       --index) indexOpt='true';;
       --db-dir) assert_argument "$1" "$opt"; dbdirOpt="$1"; shift;;
+      --log-level-node) assert_argument "$1" "$opt"; logLevelNode="$1"; shift;;
+      --log-level-d-chain) assert_argument "$1" "$opt"; logLevelDChain="$1"; shift;;
       --testnet) testnetOpt='true';;
       --admin) adminOpt='true';;
+      --eth-debug-rpc) ethDebugRpc='true';;
 
       -|''|[!-]*) set -- "$@" "$opt";;                                          # positional argument, rotate to the end
       --*=*)      set -- "${opt%%=*}" "${opt#*=}" "$@";;                        # convert '--name=arg' to '--name' 'arg'
