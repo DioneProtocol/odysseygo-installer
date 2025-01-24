@@ -186,17 +186,17 @@ create_dchain_config
 # # Append additional flags based on environment variables
 CMD+=" --config-file=/odysseygo/.odysseygo/configs/node.json"
 
-echo "cd /odysseygo/ && tree"
-cd /odysseygo/ && tree
+# echo "cd /odysseygo/ 
+# cd /odysseygo/
 
-echo "cd /odysseygo/.odysseygo/ && tree"
-cd /odysseygo/.odysseygo/ && tree
+# echo "cd /odysseygo/.odysseygo/ 
+# cd /odysseygo/.odysseygo/
 
-echo "cat /odysseygo/.odysseygo/configs/node.json"
-cat /odysseygo/.odysseygo/configs/node.json
+# echo "cat /odysseygo/.odysseygo/configs/node.json"
+# cat /odysseygo/.odysseygo/configs/node.json
 
-echo "cat /odysseygo/.odysseygo/configs/chains/D/config.json"
-cat /odysseygo/.odysseygo/configs/chains/D/config.json
+# echo "cat /odysseygo/.odysseygo/configs/chains/D/config.json"
+# cat /odysseygo/.odysseygo/configs/chains/D/config.json
 
 # # Example of adding more flags if needed
 # # CMD+=" --another-flag=value"

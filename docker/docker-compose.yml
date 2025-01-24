@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   odysseygo:
-    image: odysseygo:develop
+    image: dionetech/odysseygo:develop
     container_name: odysseygo
     restart: no
     environment:
