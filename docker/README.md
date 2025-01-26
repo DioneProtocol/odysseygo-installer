@@ -24,7 +24,7 @@ A Docker implementation of OdysseyGo node with configurable options for running 
 
 1. Clone the repository:
 ```
-git clone https://github.com/vivekteega/odysseygo-installer/
+git clone https://github.com/DioneProtocol/odysseygo-installer/
 cd odysseygo-installer
 ```
 
@@ -156,7 +156,7 @@ The node's health is monitored by checking the /ext/info endpoint every 30 secon
 
 To build the image locally:
 
-`docker build -t odysseygo:develop .`
+`docker build -t dionetech/odysseygo:develop .`
 
 ## Security Considerations
 
