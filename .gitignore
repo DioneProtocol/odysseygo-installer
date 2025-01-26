@@ -1,0 +1,7 @@
+docker/data
+docker/data/*
+
+docker/logs
+docker/logs/*
+
+docker/helper-notes

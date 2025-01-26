@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  odysseygo:
+    image: dionetech/odysseygo:develop
+    container_name: odysseygo
+    restart: no
+    environment:
+      - NETWORK=testnet
+      - RPC_ACCESS=public
+      - STATE_SYNC=on
+      - IP_MODE=dynamic
+      - PUBLIC_IP=0.0.0.0
+      - DB_DIR=/odysseygo/db
+      - LOG_LEVEL_NODE=info
+      - LOG_LEVEL_DCHAIN=info
+      - INDEX_ENABLED=false
+      - ARCHIVAL_MODE=true
+      - ADMIN_API=false
+      - ETH_DEBUG_RPC=false
+    volumes:
+      - ./data/.odysseygo:/odysseygo/.odysseygo
+      # - ./data/odyssey-node:/odysseygo/odyssey-node
+      - ./data/db:/odysseygo/db
+      - ./logs:/var/log/odysseygo
+    ports:
+      - "9650:9650"
+      - "9651:9651"
+    healthcheck:
+      # We POST to /ext/info with method=info.getNodeID
+      # to ensure it returns a 200 status when healthy.
+      test: >
+        curl -sf -X POST --data '{"jsonrpc":"2.0","id":1,"method":"info.getNodeID"}'
+        -H 'content-type:application/json'
+        http://localhost:9650/ext/info || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
