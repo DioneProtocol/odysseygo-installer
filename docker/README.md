@@ -25,7 +25,7 @@ A Docker implementation of OdysseyGo node with configurable options for running 
 1. Clone the repository:
 ```
 git clone https://github.com/DioneProtocol/odysseygo-installer/
-cd odysseygo-installer
+cd odysseygo-installer/docker
 ```
 
 2. Create required directories:
