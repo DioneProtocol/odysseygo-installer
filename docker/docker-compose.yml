@@ -4,7 +4,7 @@ services:
   odysseygo:
     image: dionetech/odysseygo:develop
     container_name: odysseygo
-    restart: no
+    restart: "no"
     environment:
       - NETWORK=testnet
       - RPC_ACCESS=public
