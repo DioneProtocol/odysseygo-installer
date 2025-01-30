@@ -4,6 +4,7 @@ services:
   odysseygo:
     image: dionetech/odysseygo:develop
     container_name: odysseygo
+    user: root
     restart: no
     environment:
       - NETWORK=testnet
@@ -19,10 +20,9 @@ services:
       - ADMIN_API=false
       - ETH_DEBUG_RPC=false
     volumes:
-      - ./data/.odysseygo:/odysseygo/.odysseygo
-      # - ./data/odyssey-node:/odysseygo/odyssey-node
-      - ./data/db:/odysseygo/db
-      - ./logs:/var/log/odysseygo
+      - "${PWD}/data/.odysseygo:/odysseygo/.odysseygo"
+      - "${PWD}/data/db:/odysseygo/db"
+      - "${PWD}/logs:/var/log/odysseygo"
     ports:
       - "9650:9650"
       - "9651:9651"
