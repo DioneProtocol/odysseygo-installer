@@ -9,7 +9,7 @@ services:
     environment:
       - NETWORK=testnet
       - RPC_ACCESS=public
-      - STATE_SYNC=on
+      - STATE_SYNC=off
       - IP_MODE=dynamic
       - PUBLIC_IP=0.0.0.0
       - DB_DIR=/odysseygo/db
@@ -18,7 +18,7 @@ services:
       - INDEX_ENABLED=false
       - ARCHIVAL_MODE=true
       - ADMIN_API=false
-      - ETH_DEBUG_RPC=false
+      - ETH_DEBUG_RPC=true
     volumes:
       - "${PWD}/data/.odysseygo:/odysseygo/.odysseygo"
       - "${PWD}/data/db:/odysseygo/db"

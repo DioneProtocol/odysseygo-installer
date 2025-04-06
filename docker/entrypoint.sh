@@ -1,112 +1,121 @@
 #!/bin/bash
 set -e
 
+# Convert environment variables to lowercase (where applicable)
+LOG_LEVEL_NODE="${LOG_LEVEL_NODE:-info}"
+LOG_LEVEL_DCHAIN="${LOG_LEVEL_DCHAIN:-info}"
+RPC_ACCESS="$(echo "${RPC_ACCESS:-public}" | tr '[:upper:]' '[:lower:]')"
+ADMIN_API="$(echo "${ADMIN_API:-false}" | tr '[:upper:]' '[:lower:]')"
+INDEX_ENABLED="$(echo "${INDEX_ENABLED:-false}" | tr '[:upper:]' '[:lower:]')"
+NETWORK="$(echo "${NETWORK:-testnet}" | tr '[:upper:]' '[:lower:]')"
+DB_DIR="${DB_DIR:-/odysseygo/db}"
+IP_MODE="$(echo "${IP_MODE:-dynamic}" | tr '[:upper:]' '[:lower:]')"
+PUBLIC_IP="${PUBLIC_IP:-}"
+STATE_SYNC="$(echo "${STATE_SYNC:-on}" | tr '[:upper:]' '[:lower:]')"
+ARCHIVAL_MODE="$(echo "${ARCHIVAL_MODE:-false}" | tr '[:upper:]' '[:lower:]')"
+ETH_DEBUG_RPC="$(echo "${ETH_DEBUG_RPC:-false}" | tr '[:upper:]' '[:lower:]')"
+
+# Ensure necessary directories exist
+mkdir -p /odysseygo/.odysseygo/configs/chains/D
+mkdir -p /odysseygo/.odysseygo/configs
+mkdir -p "$DB_DIR"
+
 # Function to validate IP address
 validate_ip() {
     local ip=$1
     local stat=1
 
     if [[ $ip =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
-        OIFS=$IFS
-        IFS='.'
-        ip=($ip)
-        IFS=$OIFS
-        [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
-            && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
-        stat=$?
+        IFS='.' read -r -a ip_arr <<< "$ip"
+        for octet in "${ip_arr[@]}"; do
+            if (( octet < 0 || octet > 255 )); then
+                return 1
+            fi
+        done
+        stat=0
     fi
     return $stat
 }
 
-# Function to create node.json using jq for safer JSON construction
+# Function to create node configuration file using jq
 create_node_config() {
     local config_path="/odysseygo/.odysseygo/configs/node.json"
-    mkdir -p "$(dirname "$config_path")"
-
     echo "Creating node configuration at $config_path"
 
-    # Start building the JSON configuration
-    jq -n \
-        --arg log_level "$LOG_LEVEL_NODE" \
-        '{
-            "log-level": $log_level,
-        }' > "$config_path"
+    # Start with base JSON
+    config=$(jq -n --arg log_level "$LOG_LEVEL_NODE" '{ "log-level": $log_level }')
 
-    # Add HTTP allowed hosts if RPC_ACCESS is public
+    # RPC access
     if [ "$RPC_ACCESS" = "public" ]; then
-        echo "Configuring RPC access as public"
-        jq '. + { "http-host": "" }' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path"
+        config=$(echo "$config" | jq '. + { "http-host": "" }')
     fi
 
-    # Add HTTP allowed hosts if RPC_ACCESS is public
+    # Admin API
     if [ "$ADMIN_API" = "true" ]; then
-        echo "Configuring ADMIN_API as true"
-        jq '. + { "api-admin-enabled": true }' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path"
+        config=$(echo "$config" | jq '. + { "api-admin-enabled": true }')
     fi
 
-    # Add HTTP allowed hosts if RPC_ACCESS is public
+    # Indexing
     if [ "$INDEX_ENABLED" = "true" ]; then
-        echo "Configuring RPC access as public"
-        jq '. + { "index-enabled": true }' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path"
+        config=$(echo "$config" | jq '. + { "index-enabled": true }')
     fi
-    
 
+    # Network selection
     if [ "$NETWORK" = "testnet" ]; then
-        echo "Configuring RPC access as public"
-        jq '. + { "network-id": "testnet" }' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path"
+        config=$(echo "$config" | jq '. + { "network-id": "testnet" }')
     elif [ "$NETWORK" = "mainnet" ]; then
-        echo "Configuring RPC access as public"
-        jq '. + { "network-id": "mainnet" }' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path"
+        config=$(echo "$config" | jq '. + { "network-id": "mainnet" }')
     else
-        echo "Invalid NETWORK: $NETWORK. Allowed values are 'mainnet' or 'testnet'. Exiting."
+        echo "Invalid NETWORK value: '$NETWORK'. Allowed values are 'testnet' or 'mainnet'."
         exit 1
     fi
-    
 
-    # Add db directory if DB_DIR is set
-    if [ -n "${DB_DIR:-}" ]; then
-        mkdir -p "$DB_DIR"
-        echo "Adding db-dir to configuration: $DB_DIR"
-        jq --arg db_dir "$DB_DIR" '. + { "db-dir": $db_dir }' "$config_path" > "${config_path}.tmp" \
-            && mv "${config_path}.tmp" "$config_path"
+    # Database directory
+    if [ -n "$DB_DIR" ]; then
+        config=$(echo "$config" | jq --arg db_dir "$DB_DIR" '. + { "db-dir": $db_dir }')
     fi
 
-    # Add public IP or dynamic resolution
+    # IP handling
     if [ "$IP_MODE" = "static" ]; then
         if [ -z "$PUBLIC_IP" ]; then
-            echo "IP_MODE is set to 'static' but PUBLIC_IP is not provided. Exiting."
+            echo "Error: IP_MODE is set to 'static' but PUBLIC_IP is not provided."
             exit 1
         fi
-
-        if validate_ip "$PUBLIC_IP"; then
-            echo "Setting static public IP: $PUBLIC_IP"
-            jq --arg public_ip "$PUBLIC_IP" '. + { "public-ip": $public_ip }' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path"
-        else
-            echo "Invalid PUBLIC_IP provided: $PUBLIC_IP. Exiting."
+        if ! validate_ip "$PUBLIC_IP"; then
+            echo "Error: Provided PUBLIC_IP ('$PUBLIC_IP') is not a valid IP address."
             exit 1
         fi
+        config=$(echo "$config" | jq --arg public_ip "$PUBLIC_IP" '. + { "public-ip": $public_ip }')
     elif [ "$IP_MODE" = "dynamic" ]; then
-        echo "Configuring dynamic IP resolution via OpenDNS"
-        jq '. + { "public-ip-resolution-service": "opendns" }' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path"
+        config=$(echo "$config" | jq '. + { "public-ip-resolution-service": "opendns" }')
     else
-        echo "Invalid IP_MODE: $IP_MODE. Allowed values are 'static' or 'dynamic'. Exiting."
+        echo "Invalid IP_MODE: '$IP_MODE'. Allowed values are 'static' or 'dynamic'."
         exit 1
     fi
+
+    # Write final config
+    echo "$config" > "$config_path"
 }
 
-# Function to create D-Chain config.json using jq
+# Function to create D-Chain configuration file using jq
 create_dchain_config() {
     local config_path="/odysseygo/.odysseygo/configs/chains/D/config.json"
-    mkdir -p "$(dirname "$config_path")"
-
     echo "Creating D-Chain configuration at $config_path"
 
-    # Start building the JSON configuration
-    jq -n \
+    # Determine state sync as boolean
+    if [ "$STATE_SYNC" = "on" ]; then
+        state_sync_enabled=true
+    elif [ "$STATE_SYNC" = "off" ]; then
+        state_sync_enabled=false
+    else
+        echo "Invalid STATE_SYNC: '$STATE_SYNC'. Allowed values are 'on' or 'off'."
+        exit 1
+    fi
+
+    # Build base configuration
+    dchain=$(jq -n \
         --arg log_level_dchain "$LOG_LEVEL_DCHAIN" \
-        --argjson eth_debug_rpc "$ETH_DEBUG_RPC" \
-        --argjson state_sync_enabled "$( [ "$STATE_SYNC" = "on" ] && echo "true" || echo "false" )" \
-        --argjson pruning_enabled "$( [ "$ARCHIVAL_MODE" = "true" ] && echo "false" || echo "null" )" \
+        --argjson state_sync_enabled "$state_sync_enabled" \
         '{
             "log-level": $log_level_dchain,
             "eth-apis": [
@@ -121,90 +130,50 @@ create_dchain_config() {
                 "internal-account"
             ],
             "state-sync-enabled": $state_sync_enabled
-        }' > "$config_path"
+        }')
 
-    # Append debug APIs if ETH_DEBUG_RPC is true
+    # Enable ETH debug RPC if specified
     if [ "$ETH_DEBUG_RPC" = "true" ]; then
-        echo "Enabling Ethereum Debug RPC APIs"
-        jq '.["eth-apis"] += ["internal-debug", "debug-tracer"]' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path"
+        dchain=$(echo "$dchain" | jq '. + { "eth-apis": (.["eth-apis"] + ["internal-debug", "debug-tracer"]) }')
     fi
 
-    # Add pruning if archival mode is enabled
+    # Set archival mode (disabling pruning) if enabled
     if [ "$ARCHIVAL_MODE" = "true" ]; then
-        echo "Disabling pruning for archival mode"
-        jq '. + { "pruning-enabled": false }' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path"
+        dchain=$(echo "$dchain" | jq '. + { "pruning-enabled": false }')
     fi
+
+    # Write final config
+    echo "$dchain" > "$config_path"
 }
 
-# Function to display usage
-usage() {
-    echo "Usage: docker run [OPTIONS] your-image
-Options:
-    -e NETWORK=testnet|mainnet
-    -e RPC_ACCESS=public|private
-    -e STATE_SYNC=on|off
-    -e IP_MODE=dynamic|static
-    -e PUBLIC_IP=your_public_ip          # Required if IP_MODE=static
-    -e DB_DIR=/path/to/db
-    -e LOG_LEVEL_NODE=info|debug
-    -e LOG_LEVEL_DCHAIN=info|debug
-    -e INDEX_ENABLED=true|false
-    -e ARCHIVAL_MODE=true|false
-    -e ADMIN_API=true|false
-    -e ETH_DEBUG_RPC=true|false
-    -v /host/path/.odysseygo:/odysseygo/.odysseygo
-    -v /host/path/odyssey-node:/odysseygo/odyssey-node
-    -v /host/path/db:/odysseygo/db
-    -v /host/path/logs:/var/log/odysseygo
-    -p 9650:9650
-    -p 9651:9651
-    --network your_network
-    --restart unless-stopped
-    --help                             Show this help message and exit
-..."
-    exit 1
-}
-
-# Handle help flag
+# If the user passes --help as an argument, display usage info
 if [[ "$1" == "--help" ]]; then
-    usage
-fi
-
-# Ensure required environment variables are set based on IP_MODE
-if [ "$IP_MODE" = "static" ] && [ -z "$PUBLIC_IP" ]; then
-    echo "Error: IP_MODE is set to 'static' but PUBLIC_IP is not provided."
-    usage
+    echo "Usage: docker run [OPTIONS] your-image"
+    echo "Environment variables:"
+    echo "  -e NETWORK=testnet|mainnet (default: testnet)"
+    echo "  -e RPC_ACCESS=public|private (default: public)"
+    echo "  -e STATE_SYNC=on|off (default: on)"
+    echo "  -e IP_MODE=dynamic|static (default: dynamic)"
+    echo "  -e PUBLIC_IP=your_public_ip (required if IP_MODE=static)"
+    echo "  -e DB_DIR=/path/to/db (default: /odysseygo/db)"
+    echo "  -e LOG_LEVEL_NODE=info|debug (default: info)"
+    echo "  -e LOG_LEVEL_DCHAIN=info|debug (default: info)"
+    echo "  -e INDEX_ENABLED=true|false (default: false)"
+    echo "  -e ARCHIVAL_MODE=true|false (default: false)"
+    echo "  -e ADMIN_API=true|false (default: false)"
+    echo "  -e ETH_DEBUG_RPC=true|false (default: false)"
+    exit 0
 fi
 
 # Create configuration files
 create_node_config
 create_dchain_config
 
-# # Construct OdysseyGo command with dynamic arguments
-# CMD="/odysseygo/odyssey-node/odysseygo"
+# Construct the OdysseyGo command
+CMD="/odysseygo/odyssey-node/odysseygo --http-allowed-hosts='*' --config-file=/odysseygo/.odysseygo/configs/node.json --log-dir=/var/log/odysseygo"
 
-# # Append additional flags based on environment variables
-CMD+=" --config-file=/odysseygo/.odysseygo/configs/node.json"
+echo "Starting OdysseyGo with command:"
+echo "$CMD"
 
-# echo "cd /odysseygo/ 
-# cd /odysseygo/
-
-# echo "cd /odysseygo/.odysseygo/ 
-# cd /odysseygo/.odysseygo/
-
-# echo "cat /odysseygo/.odysseygo/configs/node.json"
-# cat /odysseygo/.odysseygo/configs/node.json
-
-# echo "cat /odysseygo/.odysseygo/configs/chains/D/config.json"
-# cat /odysseygo/.odysseygo/configs/chains/D/config.json
-
-# # Example of adding more flags if needed
-# # CMD+=" --another-flag=value"
-
-# # Ensure the DB directory exists
-# mkdir -p "$DB_DIR"
-
-# # Start OdysseyGo and redirect logs to stdout
-echo "Starting OdysseyGo with command: $CMD --log-dir=/var/log/odysseygo"
-# exec "$CMD" --log-dir=/var/log/odysseygo
-/odysseygo/odyssey-node/odysseygo --http-allowed-hosts="*" --config-file=/odysseygo/.odysseygo/configs/node.json --log-dir=/var/log/odysseygo
+# Execute the command; use exec so that signals are properly propagated.
+exec $CMD
