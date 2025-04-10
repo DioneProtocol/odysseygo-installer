@@ -48,16 +48,16 @@ The following default values are pre-configured in the docker-compose.yml file:
 |----------|---------------|
 | NETWORK | testnet |
 | RPC_ACCESS | public |
-| STATE_SYNC | on |
+| STATE_SYNC | off |
 | IP_MODE | dynamic |
 | PUBLIC_IP | 0.0.0.0 |
 | DB_DIR | /odysseygo/db |
 | LOG_LEVEL_NODE | info |
 | LOG_LEVEL_DCHAIN | info |
-| INDEX_ENABLED | false |
-| ARCHIVAL_MODE | false |
+| INDEX_ENABLED | true |
+| ARCHIVAL_MODE | true |
 | ADMIN_API | false |
-| ETH_DEBUG_RPC | false |
+| ETH_DEBUG_RPC | true |
 
 ### Environment Variables Reference
 
