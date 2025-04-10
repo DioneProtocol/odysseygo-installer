@@ -6,28 +6,26 @@ services:
     user: root
     restart: no
     environment:
-      - NETWORK=testnet
-      - RPC_ACCESS=public
-      - STATE_SYNC=off
-      - IP_MODE=dynamic
-      - PUBLIC_IP=0.0.0.0
-      - DB_DIR=/odysseygo/db
-      - LOG_LEVEL_NODE=info
-      - LOG_LEVEL_DCHAIN=info
-      - INDEX_ENABLED=false
-      - ARCHIVAL_MODE=true
-      - ADMIN_API=false
-      - ETH_DEBUG_RPC=true
+      - NETWORK=${NETWORK:-testnet}
+      - RPC_ACCESS=${RPC_ACCESS:-public}
+      - STATE_SYNC=${STATE_SYNC:-off}
+      - IP_MODE=${IP_MODE:-dynamic}
+      - PUBLIC_IP=${PUBLIC_IP:-0.0.0.0}
+      - DB_DIR=${DB_DIR:-/odysseygo/db}
+      - LOG_LEVEL_NODE=${LOG_LEVEL_NODE:-info}
+      - LOG_LEVEL_DCHAIN=${LOG_LEVEL_DCHAIN:-info}
+      - INDEX_ENABLED=${INDEX_ENABLED:-true}
+      - ARCHIVAL_MODE=${ARCHIVAL_MODE:-true}
+      - ADMIN_API=${ADMIN_API:-false}
+      - ETH_DEBUG_RPC=${ETH_DEBUG_RPC:-true}
     volumes:
       - "${PWD}/data/.odysseygo:/odysseygo/.odysseygo"
       - "${PWD}/data/db:/odysseygo/db"
       - "${PWD}/logs:/var/log/odysseygo"
     ports:
-      - "9650:9650"
-      - "9651:9651"
+      - "${RPC_HOST_PORT:-9650}:9650"
+      - "${P2P_HOST_PORT:-9651}:9651"
     healthcheck:
-      # We POST to /ext/info with method=info.getNodeID
-      # to ensure it returns a 200 status when healthy.
       test: >
         curl -sf -X POST --data '{"jsonrpc":"2.0","id":1,"method":"info.getNodeID"}'
         -H 'content-type:application/json'

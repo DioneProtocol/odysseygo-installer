@@ -5,3 +5,5 @@ docker/logs
 docker/logs/*
 
 docker/helper-notes
+
+docker/.env*
