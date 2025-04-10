@@ -40,30 +40,115 @@ docker-compose up -d
 
 ## Configuration
 
-### Environment Variables
+### Default Environment Variables
 
-| Variable | Description | Default | Options |
-|----------|-------------|---------|----------|
-| NETWORK | Network to connect to | testnet | testnet, mainnet |
-| RPC_ACCESS | RPC access control | public | public, private |
-| STATE_SYNC | Enable/disable state sync | on | on, off |
-| IP_MODE | IP configuration mode | dynamic | dynamic, static |
-| PUBLIC_IP | Node's public IP address | 0.0.0.0 | Any valid IPv4 |
-| DB_DIR | Database directory | /odysseygo/db | Any valid path |
-| LOG_LEVEL_NODE | Node log level | info | debug, info |
-| LOG_LEVEL_DCHAIN | D-Chain log level | info | debug, info |
-| INDEX_ENABLED | Enable indexing | false | true, false |
-| ARCHIVAL_MODE | Run as archival node | false | true, false |
-| ADMIN_API | Enable admin API | false | true, false |
-| ETH_DEBUG_RPC | Enable Ethereum debug RPC | false | true, false |
+The following default values are pre-configured in the docker-compose.yml file:
 
-### Docker Compose Configuration
+| Variable | Default Value |
+|----------|---------------|
+| NETWORK | testnet |
+| RPC_ACCESS | public |
+| STATE_SYNC | on |
+| IP_MODE | dynamic |
+| PUBLIC_IP | 0.0.0.0 |
+| DB_DIR | /odysseygo/db |
+| LOG_LEVEL_NODE | info |
+| LOG_LEVEL_DCHAIN | info |
+| INDEX_ENABLED | false |
+| ARCHIVAL_MODE | false |
+| ADMIN_API | false |
+| ETH_DEBUG_RPC | false |
 
-The provided docker-compose.yml includes:
-- Automatic container restart
-- Health checking
-- Volume mapping for persistent data
-- Port exposure (9650, 9651)
+### Environment Variables Reference
+
+| Variable | Description | Options |
+|----------|-------------|---------|
+| NETWORK | Network to connect to | testnet, mainnet |
+| RPC_ACCESS | RPC access control | public, private |
+| STATE_SYNC | Enable/disable state sync | on, off |
+| IP_MODE | IP configuration mode | dynamic, static |
+| PUBLIC_IP | Node's public IP address | Any valid IPv4 |
+| DB_DIR | Database directory | Any valid path |
+| LOG_LEVEL_NODE | Node log level | debug, info |
+| LOG_LEVEL_DCHAIN | D-Chain log level | debug, info |
+| INDEX_ENABLED | Enable indexing | true, false |
+| ARCHIVAL_MODE | Run as archival node | true, false |
+| ADMIN_API | Enable admin API | true, false |
+| ETH_DEBUG_RPC | Enable Ethereum debug RPC | true, false |
+
+### Configuration Methods
+
+There are three ways to configure your OdysseyGo node:
+
+#### 1. Using a .env File (Recommended)
+
+Create a `.env` file in the same directory as your docker-compose.yml with your desired configuration:
+
+```
+# Example .env file
+NETWORK=mainnet
+ARCHIVAL_MODE=true
+RPC_ACCESS=private
+```
+
+Docker Compose will automatically load variables from this file. This is the recommended approach for persistent configurations.
+
+#### 2. Editing docker-compose.yml
+
+You can directly modify the environment section in the docker-compose.yml file:
+
+```yaml
+environment:
+  - NETWORK=mainnet
+  - ARCHIVAL_MODE=true
+  - RPC_ACCESS=private
+```
+
+#### 3. Command Line Overrides
+
+For temporary changes, you can override variables via the command line:
+
+```
+NETWORK=mainnet ARCHIVAL_MODE=true docker-compose up -d
+```
+
+## Node Configuration Examples
+
+1. **Default Testnet Node**
+   ```
+   docker-compose up -d
+   ```
+   Uses all default settings.
+
+2. **Mainnet Node**
+   ```
+   # In .env file
+   NETWORK=mainnet
+   ```
+   Or using command line:
+   ```
+   NETWORK=mainnet docker-compose up -d
+   ```
+
+3. **Archival Mainnet Node**
+   ```
+   # In .env file
+   NETWORK=mainnet
+   ARCHIVAL_MODE=true
+   ```
+
+4. **Private RPC Node with Static IP**
+   ```
+   # In .env file
+   RPC_ACCESS=private
+   IP_MODE=static
+   PUBLIC_IP=203.0.113.1  # Replace with your actual public IP
+   ```
+
+Remember to restart your container after changing configurations:
+```
+docker-compose restart
+```
 
 ## Directory Structure
 
@@ -72,75 +157,17 @@ The provided docker-compose.yml includes:
 ├── Dockerfile
 ├── entrypoint.sh
 ├── docker-compose.yml
+├── .env                 # Optional configuration file
 ├── data/
-│   ├── .odysseygo/    # Node configuration
-│   └── db/            # Blockchain data
-└── logs/              # Node logs
+│   ├── .odysseygo/     # Node configuration
+│   └── db/             # Blockchain data
+└── logs/               # Node logs
 ```
-
-
-## Running Nodes: A Quick Guide
-
-1. Testnet Node (Default)
-
-`docker-compose up -d`
-
-Pro Tip: Uses default testnet configuration in docker-compose.yml.
-
-2. Mainnet Node
-
-`NETWORK=mainnet docker-compose up -d`
-
-How to Change: Modify NETWORK environment variable.
-
-3. Archival Node
-
-`ARCHIVAL_MODE=true docker-compose up -d`
-
-Context: Keeps full historical blockchain data.
-
-4. Static IP Node
-
-`IP_MODE=static PUBLIC_IP=203.0.113.1 docker-compose up -d`
-
-Important: Replace 203.0.113.1 with your actual public IP.
-
-
-### Changing Environment Variables: 3 Ways
-
-#### Temporary Override
-
-Use environment variables in command line
-Example: `NETWORK=mainnet ARCHIVAL_MODE=true docker-compose up -d`
-
-
-#### Permanent Changes
-
-Edit docker-compose.yml
-Modify environment: section
-
-```
-environment:
-  - NETWORK=mainnet
-  - ARCHIVAL_MODE=true
-```
-
-#### Using .env File
-
-Create .env file in same directory
-```
-NETWORK=mainnet
-ARCHIVAL_MODE=true
-```
-
-Docker Compose automatically loads variables
-
-Tip: Restart container after changing configurations. 
 
 ## Volumes
 
-- .odysseygo/: Node configuration files
-- db/: Blockchain database
+- data/.odysseygo/: Node configuration files
+- data/db/: Blockchain database
 - logs/: Node logs
 
 ## Ports
@@ -156,7 +183,9 @@ The node's health is monitored by checking the /ext/info endpoint every 30 secon
 
 To build the image locally:
 
-`docker build -t dionetech/odysseygo:develop .`
+```
+docker build -t dionetech/odysseygo:develop .
+```
 
 ## Security Considerations
 
@@ -172,12 +201,16 @@ To build the image locally:
 ## Troubleshooting
 
 1. Check container logs:
+```
 docker-compose logs -f
+```
 
 2. Verify node status:
+```
 curl -X POST --data '{"jsonrpc":"2.0","id":1,"method":"info.getNodeID"}' \
     -H 'content-type:application/json' \
     http://localhost:9650/ext/info
+```
 
 3. Common issues:
    - Insufficient disk space
