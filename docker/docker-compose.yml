@@ -7,7 +7,7 @@ services:
     restart: no
     environment:
       - NETWORK=${NETWORK:-testnet}
-      - BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-testnet.zip
+      - BOOTSTRAP_URL=${BOOTSTRAP_URL:-https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-testnet.zip}
       - RPC_ACCESS=${RPC_ACCESS:-public}
       - STATE_SYNC=${STATE_SYNC:-off}
       - IP_MODE=${IP_MODE:-dynamic}
