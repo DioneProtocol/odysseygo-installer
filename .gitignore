@@ -7,3 +7,7 @@ docker/logs/*
 docker/helper-notes
 
 docker/.env*
+
+docker/*.zip
+
+.DS_Store

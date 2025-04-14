@@ -1,6 +1,10 @@
+version: '3.8'
+
 services:
   odysseygo:
-    image: dionetech/odysseygo:develop
+    build:
+      context: .
+      dockerfile: Dockerfile
     user: root
     restart: no
     environment:

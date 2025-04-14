@@ -12,6 +12,7 @@ A Docker implementation of OdysseyGo node with configurable options for running 
 - Optional archival mode
 - Optional admin API access
 - Optional Ethereum debug RPC
+- Bootstrap from URL or local file
 
 ## Prerequisites
 
@@ -38,6 +39,24 @@ mkdir -p data/.odysseygo data/db logs
 docker-compose up -d
 ```
 
+## Network Selection
+
+### Testnet (Default)
+```
+docker-compose up -d
+```
+
+### Mainnet
+```
+NETWORK=mainnet BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip docker-compose up -d
+```
+
+Or create a `.env` file with:
+```
+NETWORK=mainnet
+BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip
+```
+
 ## Configuration
 
 ### Default Environment Variables
@@ -47,6 +66,7 @@ The following default values are pre-configured in the docker-compose.yml file:
 | Variable | Default Value |
 |----------|---------------|
 | NETWORK | testnet |
+| BOOTSTRAP_URL | https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-testnet.zip |
 | RPC_ACCESS | public |
 | STATE_SYNC | off |
 | IP_MODE | dynamic |
@@ -64,6 +84,7 @@ The following default values are pre-configured in the docker-compose.yml file:
 | Variable | Description | Options |
 |----------|-------------|---------|
 | NETWORK | Network to connect to | testnet, mainnet |
+| BOOTSTRAP_URL | URL to download bootstrap data | Any valid URL to .zip file |
 | RPC_ACCESS | RPC access control | public, private |
 | STATE_SYNC | Enable/disable state sync | on, off |
 | IP_MODE | IP configuration mode | dynamic, static |
@@ -76,6 +97,34 @@ The following default values are pre-configured in the docker-compose.yml file:
 | ADMIN_API | Enable admin API | true, false |
 | ETH_DEBUG_RPC | Enable Ethereum debug RPC | true, false |
 
+### Bootstrap Configuration
+
+The node can be bootstrapped in two ways:
+
+1. **Automatic Download (Default)**: The node will download bootstrap data from the URL specified in the `BOOTSTRAP_URL` environment variable.
+
+   - **Testnet Bootstrap URL** (default):
+     ```
+     https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-testnet.zip
+     ```
+
+   - **Mainnet Bootstrap URL**:
+     ```
+     https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip
+     ```
+
+2. **Local File**: If you have already downloaded the bootstrap file, you can mount it directly:
+   
+   ```yaml
+   volumes:
+     # For testnet
+     - "${PWD}/odyssey-bootstrap-testnet.zip:/odysseygo-bootstrap/odyssey-bootstrap-testnet.zip:ro"
+     # OR for mainnet
+     - "${PWD}/odyssey-bootstrap-mainnet.zip:/odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip:ro"
+   ```
+
+   When a local file is mounted, the system will use it instead of downloading from the URL.
+
 ### Configuration Methods
 
 There are three ways to configure your OdysseyGo node:
@@ -85,8 +134,9 @@ There are three ways to configure your OdysseyGo node:
 Create a `.env` file in the same directory as your docker-compose.yml with your desired configuration:
 
 ```
-# Example .env file
+# Example .env file for mainnet
 NETWORK=mainnet
+BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip
 ARCHIVAL_MODE=true
 RPC_ACCESS=private
 ```
@@ -100,6 +150,7 @@ You can directly modify the environment section in the docker-compose.yml file:
 ```yaml
 environment:
   - NETWORK=mainnet
+  - BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip
   - ARCHIVAL_MODE=true
   - RPC_ACCESS=private
 ```
@@ -109,7 +160,7 @@ environment:
 For temporary changes, you can override variables via the command line:
 
 ```
-NETWORK=mainnet ARCHIVAL_MODE=true docker-compose up -d
+NETWORK=mainnet BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip docker-compose up -d
 ```
 
 ## Node Configuration Examples
@@ -118,23 +169,29 @@ NETWORK=mainnet ARCHIVAL_MODE=true docker-compose up -d
    ```
    docker-compose up -d
    ```
-   Uses all default settings.
+   Uses all default settings with automatic bootstrap download.
 
 2. **Mainnet Node**
    ```
    # In .env file
    NETWORK=mainnet
+   BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip
    ```
    Or using command line:
    ```
-   NETWORK=mainnet docker-compose up -d
+   NETWORK=mainnet BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip docker-compose up -d
    ```
 
-3. **Archival Mainnet Node**
+3. **Archival Mainnet Node with Local Bootstrap File**
    ```
-   # In .env file
+   # First download the bootstrap file
+   wget https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip
+   
+   # Then configure in .env file
    NETWORK=mainnet
    ARCHIVAL_MODE=true
+   
+   # And uncomment the appropriate volume mount in docker-compose.yml
    ```
 
 4. **Private RPC Node with Static IP**
@@ -216,6 +273,7 @@ curl -X POST --data '{"jsonrpc":"2.0","id":1,"method":"info.getNodeID"}' \
    - Insufficient disk space
    - Network connectivity issues
    - Invalid configuration parameters
+   - Bootstrap file download failures
 
 ## Contributing
 

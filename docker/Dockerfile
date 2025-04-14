@@ -33,6 +33,7 @@ RUN apt-get update && \
         jq \
         build-essential \
         dnsutils \
+        unzip \
         && rm -rf /var/lib/apt/lists/*
 
 # Define environment variables for OdysseyGo with sensible defaults
