@@ -4,7 +4,7 @@ services:
   odysseygo:
     image: dionetech/odysseygo:develop
     user: root
-    restart: no
+    restart: unless-stopped
     environment:
       - NETWORK=${NETWORK:-testnet}
       - BOOTSTRAP_URL=${BOOTSTRAP_URL:-https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-testnet.zip}
