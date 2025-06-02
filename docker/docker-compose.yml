@@ -1,13 +1,11 @@
-version: '3.8'
-
 services:
   odysseygo:
     image: dionetech/odysseygo:develop
     user: root
     restart: unless-stopped
     environment:
-      - NETWORK=${NETWORK:-testnet}
-      - BOOTSTRAP_URL=${BOOTSTRAP_URL:-https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-testnet.zip}
+      - NETWORK=${NETWORK:-mainnet}
+      - BOOTSTRAP_URL=${BOOTSTRAP_URL:-https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip}
       - RPC_ACCESS=${RPC_ACCESS:-public}
       - STATE_SYNC=${STATE_SYNC:-off}
       - IP_MODE=${IP_MODE:-dynamic}
@@ -23,18 +21,27 @@ services:
       - "${PWD}/data/.odysseygo:/odysseygo/.odysseygo"
       - "${PWD}/data/db:/odysseygo/db"
       - "${PWD}/logs:/var/log/odysseygo"
-      # You can still mount a local file if available; otherwise it will download.
-      # - "${PWD}/odyssey-bootstrap-testnet.zip:/odysseygo-bootstrap/odyssey-bootstrap-testnet.zip:ro"
-      # - "${PWD}/odyssey-bootstrap-mainnet.zip:/odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip:ro"
+      - "${PWD}/odyssey-bootstrap-mainnet.zip:/odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip:ro"
     ports:
       - "${RPC_HOST_PORT:-9650}:9650"
       - "${P2P_HOST_PORT:-9651}:9651"
     healthcheck:
       test: >
-        curl -sf -X POST --data '{"jsonrpc":"2.0","id":1,"method":"info.getNodeID"}'
-        -H 'content-type:application/json'
-        http://localhost:9650/ext/info || exit 1
+        curl -sf -H "Content-Type: application/json" -X POST \
+          --data '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest", true],"id":1}' \
+          http://localhost:9650/ext/bc/D/rpc || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 5s
+    networks:
+      - odyssey6
+
+networks:
+  odyssey6:
+    driver: bridge
+    enable_ipv6: true
+    ipam:
+      driver: default
+      config:
+        - subnet: "fd00:dead:beef:2::/64"
