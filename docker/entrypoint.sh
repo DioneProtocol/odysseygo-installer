@@ -212,6 +212,8 @@ create_dchain_config() {
 if [[ "$1" == "--help" ]]; then
     echo "Usage: docker run [OPTIONS] your-image"
     echo "Environment variables:"
+    echo "  -e ODYSSEYGO_VALIDATOR_FLAGS=\"<flags>\"  # Run OdysseyGo as a validator node with explicit CLI flags (bypasses archival/config-file mode)"
+    echo "  (If not set, runs in archival/config-file mode by default)"
     echo "  -e NETWORK=testnet|mainnet (default: testnet)"
     echo "  -e RPC_ACCESS=public|private (default: public)"
     echo "  -e STATE_SYNC=on|off (default: on)"
@@ -231,6 +233,12 @@ fi
 create_node_config
 create_dchain_config
 
+# After config creation, before CMD construction, add:
+if [ -n "$ODYSSEYGO_VALIDATOR_FLAGS" ]; then
+  echo "Running OdysseyGo in validator mode with CLI flags: $ODYSSEYGO_VALIDATOR_FLAGS"
+  exec /odysseygo/odyssey-node/odysseygo $ODYSSEYGO_VALIDATOR_FLAGS
+  exit 0
+fi
 
 # Construct the OdysseyGo command
 CMD="/odysseygo/odyssey-node/odysseygo --http-allowed-hosts='*' --config-file=/odysseygo/.odysseygo/configs/node.json --log-dir=/var/log/odysseygo"

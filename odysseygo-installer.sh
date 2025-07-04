@@ -190,6 +190,7 @@ usage () {
   echo "   --testnet                   Connect to testnet, defaults to mainnet if omitted"
   echo "   --admin                     Enable Admin API, defaults to disabled if omitted"
   echo "   --eth-debug-rpc             Enable Debug API, defaults to disabled if omitted"
+  echo "   --validator-flags <flags>  Run OdysseyGo as a validator node with explicit CLI flags (bypasses archival/config-file mode)."
   echo ""
   echo "Run without any options, script will install or upgrade OdysseyGo to latest available version. Node config"
   echo "options for version, ip and others will be ignored when upgrading the node, run with --reinstall to change config."
@@ -222,6 +223,7 @@ archivalOpt="no"
 dbdirOpt="no"
 ipOpt="ask"
 stateOpt="?"
+validatorFlags=""
 
 echo "OdysseyGo installer"
 echo "---------------------"
@@ -260,6 +262,7 @@ if [ "$#" != 0 ]; then
       --testnet) testnetOpt='true';;
       --admin) adminOpt='true';;
       --eth-debug-rpc) ethDebugRpc='true';;
+      --validator-flags) assert_argument "$1" "$opt"; validatorFlags="$1"; shift;;
 
       -|''|[!-]*) set -- "$@" "$opt";;                                          # positional argument, rotate to the end
       --*=*)      set -- "${opt%%=*}" "${opt#*=}" "$@";;                        # convert '--name=arg' to '--name' 'arg'
@@ -524,6 +527,13 @@ create_service_file
 chmod 644 odysseygo.service
 sudo cp -f odysseygo.service /etc/systemd/system/odysseygo.service
 sudo systemctl daemon-reload
+
+if [ -n "$validatorFlags" ]; then
+  echo "Running OdysseyGo in validator mode with CLI flags: $validatorFlags"
+  $HOME/odyssey-node/odysseygo $validatorFlags
+  exit 0
+fi
+
 sudo systemctl start odysseygo
 sudo systemctl enable odysseygo
 echo
