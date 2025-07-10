@@ -18,7 +18,8 @@ services:
       - ADMIN_API=${ADMIN_API:-false}
       - ETH_DEBUG_RPC=${ETH_DEBUG_RPC:-true}
     volumes:
-      - "${PWD}/data/.odysseygo:/odysseygo/.odysseygo"
+      - "${PWD}/data/.odysseygo:/root/.odysseygo"
+      - "${PWD}/data/.odysseygo/staking:/root/.odysseygo/staking"
       - "${PWD}/data/db:/odysseygo/db"
       - "${PWD}/logs:/var/log/odysseygo"
       - "${PWD}/odyssey-bootstrap-mainnet.zip:/odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip:ro"

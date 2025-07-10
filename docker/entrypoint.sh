@@ -1,6 +1,12 @@
 #!/bin/bash
 set -e
 
+# Remove unused /odysseygo/.odysseygo directory if it exists to avoid confusion
+if [ -d "/odysseygo/.odysseygo" ]; then
+  echo "Removing unused /odysseygo/.odysseygo directory to avoid confusion."
+  rm -rf /odysseygo/.odysseygo
+fi
+
 # Convert environment variables to lowercase (where applicable)
 LOG_LEVEL_NODE="${LOG_LEVEL_NODE:-info}"
 LOG_LEVEL_DCHAIN="${LOG_LEVEL_DCHAIN:-info}"
