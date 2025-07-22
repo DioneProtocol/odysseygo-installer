@@ -38,9 +38,17 @@ mkdir -p "$DB_DIR"
 if [ "$NETWORK" = "testnet" ]; then
     BOOSTRAP_ZIP="/odysseygo-bootstrap/odyssey-bootstrap-testnet.zip"
     NETWORK_DB_DIR="${DB_DIR}/testnet"
+    # Set default testnet bootstrap URL if not provided
+    if [ -z "$BOOTSTRAP_URL" ]; then
+        BOOTSTRAP_URL="https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-testnet.zip"
+    fi
 elif [ "$NETWORK" = "mainnet" ]; then
     BOOSTRAP_ZIP="/odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip"
     NETWORK_DB_DIR="${DB_DIR}/mainnet"
+    # Set default mainnet bootstrap URL if not provided
+    if [ -z "$BOOTSTRAP_URL" ]; then
+        BOOTSTRAP_URL="https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip"
+    fi
 else
     echo "Invalid NETWORK value: '$NETWORK'. Allowed values are 'testnet' or 'mainnet'."
     exit 1
