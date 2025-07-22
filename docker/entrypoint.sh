@@ -247,7 +247,7 @@ create_dchain_config
 
 
 # Construct the OdysseyGo command
-CMD="/odysseygo/odyssey-node/odysseygo --http-allowed-hosts='*' --config-file=/odysseygo/.odysseygo/configs/node.json --log-dir=/var/log/odysseygo"
+CMD="/odysseygo/odyssey-node/odysseygo --http-allowed-hosts=* --config-file=/odysseygo/.odysseygo/configs/node.json --log-dir=/var/log/odysseygo"
 
 echo "Starting OdysseyGo with command:"
 echo "$CMD"

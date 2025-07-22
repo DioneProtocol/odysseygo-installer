@@ -29,11 +29,11 @@ services:
       test: >
         curl -sf -H "Content-Type: application/json" -X POST \
           --data '{"jsonrpc":"2.0","method":"eth_getBlockByNumber","params":["latest", true],"id":1}' \
-          http://localhost:9650/ext/bc/D/rpc || exit 1
+          http://127.0.0.1:9650/ext/bc/D/rpc || exit 1
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 5s
+      start_period: 60s
     networks:
       - odyssey6
 
