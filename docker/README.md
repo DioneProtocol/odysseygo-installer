@@ -1,18 +1,34 @@
 # OdysseyGo Docker Node
 
-A Docker implementation of OdysseyGo node with configurable options for running both mainnet and testnet networks.
+A Docker implementation of OdysseyGo node with configurable options for running both mainnet and testnet networks. Supports both **validator nodes** and **archive nodes** with automatic bootstrap download.
+
+## Node Types
+
+### 🛡️ Validator Node (Recommended for most users)
+- **Purpose**: Participate in consensus and earn staking rewards
+- **Storage**: Minimal (~50-100GB with state sync)
+- **Sync time**: Fast (hours with state sync)
+- **Configuration**: State sync enabled, archival mode disabled
+- **Use case**: Staking, validation, basic API access
+
+### 📚 Archive Node (For data providers)
+- **Purpose**: Store complete blockchain history
+- **Storage**: Large (~500GB+ and growing)
+- **Sync time**: Slow (days/weeks)
+- **Configuration**: Archival mode enabled, state sync disabled
+- **Use case**: Block explorers, data analytics, historical queries
 
 ## Features
 
+- **Automatic network detection and bootstrap download**
 - Configurable network mode (mainnet/testnet)
 - Public/Private RPC access control
 - Dynamic/Static IP configuration
-- State sync support
+- State sync support for fast validator setup
 - Customizable logging levels
-- Optional archival mode
+- Optional archival mode for full history
 - Optional admin API access
 - Optional Ethereum debug RPC
-- Bootstrap from URL or local file
 
 ## Prerequisites
 
@@ -23,38 +39,80 @@ A Docker implementation of OdysseyGo node with configurable options for running 
 
 ## Quick Start
 
+### For Validators (Recommended Setup)
+
+**👉 For complete validator setup instructions, see [VALIDATOR_SETUP.md](VALIDATOR_SETUP.md)**
+
 1. Clone the repository:
-```
+```bash
 git clone https://github.com/DioneProtocol/odysseygo-installer/
 cd odysseygo-installer/docker
 ```
 
 2. Create required directories:
-```
+```bash
 mkdir -p data/.odysseygo data/db logs
 ```
 
-3. Start the node:
+3. Create validator configuration:
+```bash
+cat > .env << EOF
+NETWORK=mainnet
+STATE_SYNC=on
+ARCHIVAL_MODE=false
+RPC_ACCESS=private
+EOF
 ```
+
+4. Start your validator node:
+```bash
+docker-compose up -d
+```
+
+### For Archive Nodes (Data Providers)
+
+1-2. Same as above
+
+3. Create archive configuration:
+```bash
+cat > .env << EOF
+NETWORK=mainnet
+STATE_SYNC=off
+ARCHIVAL_MODE=true
+RPC_ACCESS=public
+EOF
+```
+
+4. Start your archive node (⚠️ requires significant storage and time):
+```bash
+docker-compose up -d
+```
+
+### Default Quick Start (Archive Mode)
+
+For the default configuration (archive node):
+```bash
+# Create directories
+mkdir -p data/.odysseygo data/db logs
+# Start with defaults
 docker-compose up -d
 ```
 
 ## Network Selection
 
-### Testnet (Default)
+### Mainnet (Default)
 ```
 docker-compose up -d
 ```
 
-### Mainnet
+### Testnet
 ```
-NETWORK=mainnet BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip docker-compose up -d
+NETWORK=testnet docker-compose up -d
 ```
 
 Or create a `.env` file with:
 ```
-NETWORK=mainnet
-BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip
+NETWORK=testnet
 ```
 
 ## Configuration
@@ -65,8 +123,8 @@ The following default values are pre-configured in the docker-compose.yml file:
 
 | Variable | Default Value |
 |----------|---------------|
-| NETWORK | testnet |
-| BOOTSTRAP_URL | https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-testnet.zip |
+| NETWORK | mainnet |
+| BOOTSTRAP_URL | Auto-selected based on NETWORK |
 | RPC_ACCESS | public |
 | STATE_SYNC | off |
 | IP_MODE | dynamic |
