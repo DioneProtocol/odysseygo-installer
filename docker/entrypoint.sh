@@ -1,12 +1,6 @@
 #!/bin/bash
 set -e
 
-# Remove unused /odysseygo/.odysseygo directory if it exists to avoid confusion
-if [ -d "/odysseygo/.odysseygo" ]; then
-  echo "Removing unused /odysseygo/.odysseygo directory to avoid confusion."
-  rm -rf /odysseygo/.odysseygo
-fi
-
 # Convert environment variables to lowercase (where applicable)
 LOG_LEVEL_NODE="${LOG_LEVEL_NODE:-info}"
 LOG_LEVEL_DCHAIN="${LOG_LEVEL_DCHAIN:-info}"
@@ -29,21 +23,20 @@ mkdir -p /odysseygo/.odysseygo/configs/chains/D
 mkdir -p /odysseygo/.odysseygo/configs
 mkdir -p "$DB_DIR"
 
-
 ##############################
 # BEGIN: Bootstrap Extraction
 ##############################
 
 # Determine the network-specific database folder and bootstrap file
 if [ "$NETWORK" = "testnet" ]; then
-    BOOSTRAP_ZIP="/odysseygo-bootstrap/odyssey-bootstrap-testnet.zip"
+    BOOTSTRAP_ZIP="/odysseygo-bootstrap/odyssey-bootstrap-testnet.zip"
     NETWORK_DB_DIR="${DB_DIR}/testnet"
     # Set default testnet bootstrap URL if not provided
     if [ -z "$BOOTSTRAP_URL" ]; then
         BOOTSTRAP_URL="https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-testnet.zip"
     fi
 elif [ "$NETWORK" = "mainnet" ]; then
-    BOOSTRAP_ZIP="/odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip"
+    BOOTSTRAP_ZIP="/odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip"
     NETWORK_DB_DIR="${DB_DIR}/mainnet"
     # Set default mainnet bootstrap URL if not provided
     if [ -z "$BOOTSTRAP_URL" ]; then
@@ -57,17 +50,19 @@ fi
 # Create the network-specific DB folder if it does not exist
 mkdir -p "$NETWORK_DB_DIR"
 
-# (New Option)
 # If the local bootstrap file is not present and BOOTSTRAP_URL is provided,
 # download the file from the URL to the expected location.
-if [ ! -f "$BOOSTRAP_ZIP" ] && [ -n "$BOOTSTRAP_URL" ]; then
-    echo "Local bootstrap file not found. Downloading from $BOOTSTRAP_URL ..."
+if [ ! -f "$BOOTSTRAP_ZIP" ] && [ -n "$BOOTSTRAP_URL" ]; then
+    echo "Downloading bootstrap data from $BOOTSTRAP_URL ..."
     # Using curl for downloading; you can also use wget if preferred.
-    curl -fsSL "$BOOTSTRAP_URL" -o "$BOOSTRAP_ZIP"
+    curl -fsSL "$BOOTSTRAP_URL" -o "$BOOTSTRAP_ZIP"
     if [ $? -ne 0 ]; then
       echo "Error: Failed to download bootstrap file from $BOOTSTRAP_URL"
       exit 1
     fi
+    echo "Bootstrap download completed successfully!"
+else
+    echo "Bootstrap file already exists or URL not provided, skipping download."
 fi
 
 # Define the bootstrap flag file within the network DB folder.
@@ -75,16 +70,16 @@ BOOTSTRAP_DONE="${NETWORK_DB_DIR}/.bootstrap_done"
 
 # Check if bootstrap extraction has already been performed.
 if [ ! -f "$BOOTSTRAP_DONE" ]; then
-    if [ -f "$BOOSTRAP_ZIP" ]; then
-        echo "Bootstrap zip found at $BOOSTRAP_ZIP. Extracting into ${DB_DIR}..."
+    if [ -f "$BOOTSTRAP_ZIP" ]; then
+        echo "Extracting bootstrap data into ${DB_DIR}..."
         # Optionally: clean up any existing incomplete data:
         # rm -rf "${NETWORK_DB_DIR:?}"/*
-        unzip -q "$BOOSTRAP_ZIP" -d "${DB_DIR}"
+        unzip -q "$BOOTSTRAP_ZIP" -d "${DB_DIR}"
         # The zip file should include its own subfolder (mainnet/v1.4.5 or testnet/v1.4.5)
         touch "$BOOTSTRAP_DONE"
-        echo "Bootstrap complete."
+        echo "Bootstrap extraction completed."
     else
-        echo "No bootstrap zip found at $BOOSTRAP_ZIP, continuing without bootstrapping."
+        echo "No bootstrap zip found at $BOOTSTRAP_ZIP, continuing without bootstrapping."
     fi
 else
     echo "Bootstrap previously performed; skipping extraction."
@@ -93,8 +88,6 @@ fi
 ##############################
 # END: Bootstrap Extraction
 ##############################
-
-
 
 # Function to validate IP address
 validate_ip() {
@@ -245,12 +238,10 @@ fi
 create_node_config
 create_dchain_config
 
-
 # Construct the OdysseyGo command
 CMD="/odysseygo/odyssey-node/odysseygo --http-allowed-hosts=* --config-file=/odysseygo/.odysseygo/configs/node.json --log-dir=/var/log/odysseygo"
 
-echo "Starting OdysseyGo with command:"
-echo "$CMD"
+echo "Starting OdysseyGo..."
 
 # Execute the command; use exec so that signals are properly propagated.
 exec $CMD

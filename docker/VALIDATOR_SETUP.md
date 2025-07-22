@@ -25,6 +25,7 @@ Setting up a validator involves three main steps:
   - At least 100GB free disk space (less if using state sync)
   - Docker v20.10.0 or higher
   - Docker Compose v2.0.0 or higher
+  - Internet connection for bootstrap download
 
 - **Network Requirements:**
   - Keep RPC port 9650 private
@@ -84,6 +85,11 @@ EOF
 ```bash
 docker-compose up -d
 ```
+
+**🎉 The container will automatically:**
+- Download the appropriate bootstrap file (~222MB for mainnet, smaller for testnet)
+- Extract the bootstrap data to the database directory
+- Start the OdysseyGo node with your configuration
 
 This validator-optimized configuration provides:
 - **Network**: Testnet
@@ -182,6 +188,7 @@ chmod 600 ~/validator-backup/staking-keys/*
 | Variable | Default | Description | Options |
 |----------|---------|-------------|---------|
 | `NETWORK` | mainnet | Network to connect to | testnet, mainnet |
+| `BOOTSTRAP_URL` | Auto-selected | Bootstrap download URL | Any valid URL |
 | `RPC_ACCESS` | public | RPC access control | public, private |
 | `IP_MODE` | dynamic | IP configuration mode | dynamic, static |
 | `PUBLIC_IP` | 0.0.0.0 | Node's public IP address | Any valid IPv4 |
@@ -396,7 +403,17 @@ curl -X POST --data '{"jsonrpc":"2.0","id":1,"method":"info.isBootstrapped","par
    docker-compose restart
    ```
 
-4. **Insufficient disk space:**
+4. **Bootstrap download issues:**
+   ```bash
+   # Check if bootstrap file exists
+   docker exec <container_name> ls -la /odysseygo-bootstrap/
+   
+   # Force re-download by removing bootstrap file
+   docker exec <container_name> rm -f /odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip
+   docker-compose restart
+   ```
+
+5. **Insufficient disk space:**
    - Monitor disk usage regularly
    - Consider enabling state sync and disabling archival mode for validators
    - Archive nodes require significantly more storage
@@ -454,6 +471,7 @@ wc -c ~/validator-backup/staking-keys/*
   - **Validators**: Can use state sync and non-archival mode for faster setup and less storage
   - **Archive nodes**: Only needed for data providers, explorers, or specific use cases requiring full history
 - **State Sync Benefits**: Significantly reduces initial sync time and ongoing storage requirements
+- **Automatic Bootstrap**: The Docker container automatically downloads and extracts bootstrap data on first run
 
 ## Directory Structure
 

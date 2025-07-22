@@ -1,6 +1,20 @@
 # OdysseyGo Docker Node
 
-A Docker implementation of OdysseyGo node with configurable options for running both mainnet and testnet networks. Supports both **validator nodes** and **archive nodes** with automatic bootstrap download.
+A Docker implementation of OdysseyGo node with configurable options for running both mainnet and testnet networks. Supports both **validator nodes** and **archive nodes** with **automatic bootstrap download**.
+
+## 🚀 New Feature: Automatic Bootstrap Download
+
+**The Docker container now automatically downloads and extracts bootstrap data on first run!**
+
+- ✅ **Automatic Download**: Bootstrap files are downloaded automatically from official CDN
+- ✅ **Smart Detection**: Only downloads if bootstrap data doesn't exist
+- ✅ **Network-Specific**: Downloads the correct bootstrap for mainnet or testnet
+- ✅ **Resume Support**: Won't re-download if bootstrap already exists
+- ✅ **Progress Logging**: Clear feedback during download and extraction
+
+### Bootstrap URLs (Automatically Selected)
+- **Mainnet**: `https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip`
+- **Testnet**: `https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-testnet.zip`
 
 ## Node Types
 
@@ -20,7 +34,8 @@ A Docker implementation of OdysseyGo node with configurable options for running 
 
 ## Features
 
-- **Automatic network detection and bootstrap download**
+- **🔄 Automatic network detection and bootstrap download**
+- **⚡ Fast startup** with pre-downloaded bootstrap data
 - Configurable network mode (mainnet/testnet)
 - Public/Private RPC access control
 - Dynamic/Static IP configuration
@@ -36,6 +51,7 @@ A Docker implementation of OdysseyGo node with configurable options for running 
 - Docker Compose v2.0.0 or higher
 - Minimum 4GB RAM
 - At least 100GB free disk space
+- Internet connection for initial bootstrap download
 
 ## Quick Start
 
@@ -64,10 +80,15 @@ RPC_ACCESS=private
 EOF
 ```
 
-4. Start your validator node:
+4. Start your validator node (bootstrap will download automatically):
 ```bash
 docker-compose up -d
 ```
+
+**🎉 That's it!** The container will automatically:
+- Download the appropriate bootstrap file (~222MB for mainnet)
+- Extract the bootstrap data to the database directory
+- Start the OdysseyGo node with your configuration
 
 ### For Archive Nodes (Data Providers)
 
@@ -94,19 +115,19 @@ For the default configuration (archive node):
 ```bash
 # Create directories
 mkdir -p data/.odysseygo data/db logs
-# Start with defaults
+# Start with defaults (bootstrap downloads automatically)
 docker-compose up -d
 ```
 
 ## Network Selection
 
 ### Mainnet (Default)
-```
+```bash
 docker-compose up -d
 ```
 
 ### Testnet
-```
+```bash
 NETWORK=testnet docker-compose up -d
 ```
 
@@ -224,24 +245,24 @@ NETWORK=mainnet BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitalocean
 ## Node Configuration Examples
 
 1. **Default Testnet Node**
-   ```
+   ```bash
    docker-compose up -d
    ```
    Uses all default settings with automatic bootstrap download.
 
 2. **Mainnet Node**
-   ```
+   ```bash
    # In .env file
    NETWORK=mainnet
    BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip
    ```
    Or using command line:
-   ```
+   ```bash
    NETWORK=mainnet BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip docker-compose up -d
    ```
 
 3. **Archival Mainnet Node with Local Bootstrap File**
-   ```
+   ```bash
    # First download the bootstrap file
    wget https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip
    
@@ -253,7 +274,7 @@ NETWORK=mainnet BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitalocean
    ```
 
 4. **Private RPC Node with Static IP**
-   ```
+   ```bash
    # In .env file
    RPC_ACCESS=private
    IP_MODE=static
@@ -261,7 +282,7 @@ NETWORK=mainnet BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitalocean
    ```
 
 Remember to restart your container after changing configurations:
-```
+```bash
 docker-compose restart
 ```
 
@@ -298,7 +319,7 @@ The node's health is monitored by checking the /ext/info endpoint every 30 secon
 
 To build the image locally:
 
-```
+```bash
 docker build -t dionetech/odysseygo:develop .
 ```
 
@@ -316,22 +337,33 @@ docker build -t dionetech/odysseygo:develop .
 ## Troubleshooting
 
 1. Check container logs:
-```
+```bash
 docker-compose logs -f
 ```
 
 2. Verify node status:
-```
+```bash
 curl -X POST --data '{"jsonrpc":"2.0","id":1,"method":"info.getNodeID"}' \
     -H 'content-type:application/json' \
     http://localhost:9650/ext/info
 ```
 
 3. Common issues:
-   - Insufficient disk space
-   - Network connectivity issues
-   - Invalid configuration parameters
-   - Bootstrap file download failures
+   - **Bootstrap download fails**: Check internet connectivity and firewall settings
+   - **Insufficient disk space**: Ensure at least 100GB free space
+   - **Network connectivity issues**: Verify firewall and network configuration
+   - **Invalid configuration parameters**: Check environment variable values
+   - **Bootstrap file corruption**: Delete the bootstrap file and restart to re-download
+
+4. **Bootstrap Download Issues**:
+   ```bash
+   # Check if bootstrap file exists
+   docker exec <container_name> ls -la /odysseygo-bootstrap/
+   
+   # Force re-download by removing bootstrap file
+   docker exec <container_name> rm -f /odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip
+   docker-compose restart
+   ```
 
 ## Contributing
 

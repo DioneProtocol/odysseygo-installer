@@ -12,7 +12,35 @@ Packages required when using the `--version` flag:
 - `go` - if this package is missing, you need to install it yourself (version >= 1.20.8)
 - `git` - if this package is missing, you need to install it yourself
 
+## Installation Options
+
+### Option 1: Shell Script Installation (Traditional)
+Use the shell script for direct installation on your system.
+
+### Option 2: Docker Installation (Recommended)
+For easier setup with automatic bootstrap download, use the Docker option:
+
+```bash
+git clone https://github.com/DioneProtocol/odysseygo-installer/
+cd odysseygo-installer/docker
+
+# Create directories
+mkdir -p data/.odysseygo data/db logs
+
+# Start with automatic bootstrap download
+docker-compose up -d
+```
+
+**🚀 Docker Benefits:**
+- ✅ Automatic bootstrap download and extraction
+- ✅ Isolated environment
+- ✅ Easy configuration via environment variables
+- ✅ Consistent deployment across platforms
+
+For detailed Docker documentation, see [docker/README.md](docker/README.md).
+
 ## Examples
+
 ### For instructions, enter the command:
 ```bash
 ./odysseygo-installer.sh --help
