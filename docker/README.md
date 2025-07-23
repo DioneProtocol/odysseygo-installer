@@ -119,6 +119,72 @@ mkdir -p data/.odysseygo data/db logs
 docker-compose up -d
 ```
 
+## Verifying Your Node: Testing RPC Access
+
+After starting your node, you may want to verify it’s running and accessible. The OdysseyGo node’s RPC API (port 9650) can be set to either public or private access. This affects how you can interact with the node for testing, scripting, and integration.
+
+## 🧪 Testing RPC Access: Public vs Private Modes
+
+### RPC_ACCESS=public (default for archive nodes, convenient for testing)
+- You can use curl and other tools from your host or external machines.
+- Example test steps:
+
+```bash
+git clone https://github.com/DioneProtocol/odysseygo-installer/
+cd odysseygo-installer/docker
+mkdir -p data/.odysseygo data/db logs
+echo "RPC_ACCESS=public" >> .env
+docker-compose up -d
+# Get container ID
+docker ps
+# Access staking directory
+docker exec -it <container_id> ls /root/.odysseygo/staking
+# Copy staking keys to host (for backup)
+docker cp <container_id>:/root/.odysseygo/staking ./staking-backup
+
+# Test RPC from host
+curl -s --location --request POST 'http://127.0.0.1:9650/ext/info' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{"jsonrpc": "2.0", "id": 1, "method": "info.getNodeID"}'
+```
+
+### RPC_ACCESS=private (recommended for validators)
+- The RPC API is only accessible from inside the container.
+- Use docker exec to run curl or scripts inside the container:
+- The following example uses testnet, but you can use mainnet as needed.
+
+```bash
+docker-compose down
+cat > .env << EOF
+NETWORK=testnet
+STATE_SYNC=on
+ARCHIVAL_MODE=false
+RPC_ACCESS=private
+EOF
+docker-compose up -d
+
+# Create backup directory
+mkdir -p ~/validator-backup/staking-keys
+docker cp <container_id>:/root/.odysseygo/staking/. ~/validator-backup/staking-keys/
+chmod 600 ~/validator-backup/staking-keys/*
+
+# Test RPC from inside the container
+docker exec -it <container_id> curl -s --location --request POST 'http://127.0.0.1:9650/ext/info' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{"jsonrpc": "2.0", "id": 1, "method": "info.getNodeID"}'
+```
+
+### Windows/WSL Note
+- If you get `invalid host specified` with `localhost`, use `127.0.0.1` instead.
+
+### Healthcheck Note
+- If the container is marked as unhealthy with `RPC_ACCESS=private`, this is expected (the healthcheck can't reach the private RPC from outside). The node is still running fine.
+
+### For OdysseyJS and Other Tools
+- If your scripts/tools need to connect to the node’s RPC, set `RPC_ACCESS=public` (at least temporarily).
+- For production, always revert to `RPC_ACCESS=private` after testing or registration for security.
+- If you keep `RPC_ACCESS=private`, run those scripts inside the container or use SSH port forwarding.
+
 ## Network Selection
 
 ### Mainnet (Default)

@@ -202,6 +202,43 @@ If you want to force the container to re-download the bootstrap file (e.g., if t
 
 The container will re-download the bootstrap file on next startup.
 
+## Verifying Your Node: Testing RPC Access
+
+Once your node is running, you’ll want to verify it’s accessible and healthy. The OdysseyGo validator node’s RPC API (port 9650) can be set to either public or private access. This affects how you can interact with the node for testing, scripting, and validator registration.
+
+## 🧪 Testing RPC Access: Public vs Private Modes
+
+### RPC_ACCESS=private (recommended for validators)
+- The RPC API is only accessible from inside the container.
+- Use docker exec to run curl or scripts inside the container:
+
+```bash
+# Test RPC from inside the container
+docker exec -it <container_id> curl -s --location --request POST 'http://127.0.0.1:9650/ext/info' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{"jsonrpc": "2.0", "id": 1, "method": "info.getNodeID"}'
+```
+
+### RPC_ACCESS=public (convenient for testing and integration)
+- You can use curl and other tools from your host or external machines.
+- Example:
+
+```bash
+curl -s --location --request POST 'http://127.0.0.1:9650/ext/info' \
+  --header 'Content-Type: application/json' \
+  --data-raw '{"jsonrpc": "2.0", "id": 1, "method": "info.getNodeID"}'
+```
+
+### Windows/WSL Note
+- If you get `invalid host specified` with `localhost`, use `127.0.0.1` instead.
+
+### Healthcheck Note
+- If the container is marked as unhealthy with `RPC_ACCESS=private`, this is expected (the healthcheck can't reach the private RPC from outside). The node is still running fine.
+
+### OdysseyJS and Other Tools
+- If your scripts/tools (like OdysseyJS) need to connect to the node’s RPC, set `RPC_ACCESS=public` (at least temporarily) or run them inside the container.
+- For validator registration, you may need to temporarily set `RPC_ACCESS=public` or use SSH port forwarding, but always revert to `RPC_ACCESS=private` for production security.
+
 ## ⚠️ CRITICAL: Backup Your Staking Keys
 
 **IMMEDIATELY after node setup, create a secure backup of your staking keys:**
@@ -332,6 +369,8 @@ curl -s --location --request POST 'http://127.0.0.1:9650/ext/info' \
 ```
 
 Save the `nodeID` value for the next step.
+
+**Note:** If you are using `RPC_ACCESS=private`, run the curl command inside the container using `docker exec` as shown in the 'Testing RPC Access' section above.
 
 ## Step 3: Validator Registration
 
