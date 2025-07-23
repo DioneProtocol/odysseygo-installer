@@ -10,11 +10,26 @@ print_block_number() {
   RAW_JSON="$1"
   BLOCK_HEX=`echo "$RAW_JSON" | grep -o '"result":"0x[0-9a-fA-F]\+' | cut -d'"' -f4`
   if [ -n "$BLOCK_HEX" ]; then
-    # Convert hex to decimal (POSIX)
     BLOCK_DEC=`printf "%d" "$(( $BLOCK_HEX ))" 2>/dev/null || echo "(conversion error)"`
     echo "Current Synced Block (D Chain): $BLOCK_HEX (hex) / $BLOCK_DEC (decimal)"
   else
     echo "Current Synced Block (D Chain): $RAW_JSON"
+  fi
+}
+
+print_balance() {
+  RAW_JSON="$1"
+  BAL_HEX=`echo "$RAW_JSON" | grep -o '"result":"0x[0-9a-fA-F]\+' | cut -d'"' -f4`
+  if [ -n "$BAL_HEX" ]; then
+    BAL_WEI=`printf "%d" "$(( $BAL_HEX ))" 2>/dev/null || echo "(conversion error)"`
+    if command -v bc >/dev/null 2>&1; then
+      BAL_DIONE=`echo "scale=18; $BAL_WEI/1000000000000000000" | bc`
+      echo "Balance: $BAL_HEX (hex) / $BAL_WEI (wei) / $BAL_DIONE DIONE"
+    else
+      echo "Balance: $BAL_HEX (hex) / $BAL_WEI (wei) (install 'bc' for DIONE conversion)"
+    fi
+  else
+    echo "Balance: $RAW_JSON"
   fi
 }
 
@@ -41,7 +56,9 @@ run_all_tests() {
   print_block_number "$BLOCK_JSON"
 
   echo "\n[6] eth_getBalance (D Chain, $ETH_ADDRESS):"
-  eval "$RUN_CMD \"$CURL -X POST $HOST_RPC/ext/bc/D/rpc -H 'Content-Type: application/json' -d '{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"eth_getBalance\\\",\\\"params\\\":[\\\"$ETH_ADDRESS\\\",\\\"latest\\\"],\\\"id\\\":1}'\""
+  BAL_JSON=`eval "$RUN_CMD \"$CURL -X POST $HOST_RPC/ext/bc/D/rpc -H 'Content-Type: application/json' -d '{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"eth_getBalance\\\",\\\"params\\\":[\\\"$ETH_ADDRESS\\\",\\\"latest\\\"],\\\"id\\\":1}'\""`
+  echo "$BAL_JSON"
+  print_balance "$BAL_JSON"
 }
 
 # Try from host
