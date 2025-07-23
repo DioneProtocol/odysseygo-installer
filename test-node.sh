@@ -6,6 +6,17 @@ ETH_ADDRESS="${ETH_ADDRESS:-0x8ef8E8E08C4ecE1CCED0Ab36EDA8Af7e1b484e82}"
 HOST_RPC="http://127.0.0.1:9650"
 CURL="curl -s --max-time 5"
 
+get_d_chain_id() {
+  RUN_CMD="$1"
+  D_CHAIN_ID_JSON=`eval "$RUN_CMD \"$CURL -X POST $HOST_RPC/ext/info -H 'Content-Type: application/json' --data-raw '{\\\"jsonrpc\\\": \\\"2.0\\\", \\\"id\\\": 1, \\\"method\\\": \\\"info.getBlockchainID\\\", \\\"params\\\": {\\\"alias\\\": \\\"D\\\"}}'\""`
+  D_CHAIN_ID=`echo "$D_CHAIN_ID_JSON" | grep -o '"blockchainID":"[^"]\+' | cut -d'"' -f4`
+  if [ -z "$D_CHAIN_ID" ]; then
+    echo "[ERROR] Could not detect D-Chain blockchain ID. Raw response: $D_CHAIN_ID_JSON"
+    exit 1
+  fi
+  echo "$D_CHAIN_ID"
+}
+
 print_block_number() {
   RAW_JSON="$1"
   BLOCK_HEX=`echo "$RAW_JSON" | grep -o '"result":"0x[0-9a-fA-F]\+' | cut -d'"' -f4`
@@ -47,16 +58,19 @@ run_all_tests() {
   echo "\n[3] D-Chain Bootstrapped:"
   eval "$RUN_CMD \"$CURL -X POST $HOST_RPC/ext/info -H 'Content-Type: application/json' --data-raw '{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"id\\\":1,\\\"method\\\":\\\"info.isBootstrapped\\\",\\\"params\\\":{\\\"chain\\\":\\\"D\\\"}}'\""
 
+  D_CHAIN_ID=`get_d_chain_id "$RUN_CMD"`
+  D_CHAIN_RPC="/ext/bc/$D_CHAIN_ID/rpc"
+
   echo "\n[4] eth_chainId (D Chain):"
-  eval "$RUN_CMD \"$CURL -X POST $HOST_RPC/ext/bc/D/rpc -H 'Content-Type: application/json' -d '{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"eth_chainId\\\",\\\"params\\\":[],\\\"id\\\":1}'\""
+  eval "$RUN_CMD \"$CURL -X POST $HOST_RPC$D_CHAIN_RPC -H 'Content-Type: application/json' -d '{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"eth_chainId\\\",\\\"params\\\":[],\\\"id\\\":1}'\""
 
   echo "\n[5] eth_blockNumber (D Chain):"
-  BLOCK_JSON=`eval "$RUN_CMD \"$CURL -X POST $HOST_RPC/ext/bc/D/rpc -H 'Content-Type: application/json' -d '{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"eth_blockNumber\\\",\\\"params\\\":[],\\\"id\\\":1}'\""`
+  BLOCK_JSON=`eval "$RUN_CMD \"$CURL -X POST $HOST_RPC$D_CHAIN_RPC -H 'Content-Type: application/json' -d '{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"eth_blockNumber\\\",\\\"params\\\":[],\\\"id\\\":1}'\""`
   echo "$BLOCK_JSON"
   print_block_number "$BLOCK_JSON"
 
   echo "\n[6] eth_getBalance (D Chain, $ETH_ADDRESS):"
-  BAL_JSON=`eval "$RUN_CMD \"$CURL -X POST $HOST_RPC/ext/bc/D/rpc -H 'Content-Type: application/json' -d '{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"eth_getBalance\\\",\\\"params\\\":[\\\"$ETH_ADDRESS\\\",\\\"latest\\\"],\\\"id\\\":1}'\""`
+  BAL_JSON=`eval "$RUN_CMD \"$CURL -X POST $HOST_RPC$D_CHAIN_RPC -H 'Content-Type: application/json' -d '{\\\"jsonrpc\\\":\\\"2.0\\\",\\\"method\\\":\\\"eth_getBalance\\\",\\\"params\\\":[\\\"$ETH_ADDRESS\\\",\\\"latest\\\"],\\\"id\\\":1}'\""`
   echo "$BAL_JSON"
   print_balance "$BAL_JSON"
 }
