@@ -144,6 +144,64 @@ docker exec -it <container_id> ls /root/.odysseygo/staking
 docker cp <container_id>:/root/.odysseygo/staking ./staking-backup
 ```
 
+## 🧹 Starting from a Fresh Bootstrap (Clean State)
+
+If you want to ensure your validator node starts from a completely fresh state (for example, to re-download the bootstrap and clear all previous data), follow these steps:
+
+### 1. Stop and Remove All Containers
+```bash
+docker-compose down
+```
+
+### 2. Remove All Docker Volumes (Persistent Data)
+```bash
+docker volume prune -f
+```
+
+### 3. Remove All Docker Images (Optional, for a truly clean slate)
+```bash
+docker image prune -a -f
+```
+
+### 4. Remove Any Host Data Folders (if you mounted host directories)
+If you used host-mounted volumes (e.g., `data/` or `logs/`), delete them manually:
+```bash
+rm -rf data/ logs/
+```
+
+### 5. Start Validator Node (Fresh Bootstrap)
+Set the network to mainnet or testnet (if not already set in your `.env`):
+```bash
+NETWORK=mainnet docker-compose up --build
+# or for testnet
+NETWORK=testnet docker-compose up --build
+```
+
+This will:
+- Download the appropriate bootstrap zip afresh
+- Extract and initialize the node from scratch
+
+**Note:** For validator-optimized setup, ensure your `.env` has `STATE_SYNC=on` and `ARCHIVAL_MODE=false`.
+
+---
+
+## 🔄 Forcing a Fresh Bootstrap Download (Troubleshooting)
+
+If you want to force the container to re-download the bootstrap file (e.g., if the file is corrupted or you want to reset):
+
+1. Remove the bootstrap file inside the running container:
+   ```bash
+   docker exec <container_name> rm -f /odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip
+   # or for testnet:
+   docker exec <container_name> rm -f /odysseygo-bootstrap/odyssey-bootstrap-testnet.zip
+   ```
+2. Restart the container:
+   ```bash
+   docker-compose restart
+   ```
+
+The container will re-download the bootstrap file on next startup.
+
 ## ⚠️ CRITICAL: Backup Your Staking Keys
 
 **IMMEDIATELY after node setup, create a secure backup of your staking keys:**
