@@ -124,7 +124,8 @@ docker-compose up -d
 A simple script, `test-node.sh`, is included to help you verify your OdysseyGo node is running and healthy. It automatically checks:
 - NodeID
 - O/D chain bootstrapped status
-- Ethereum RPC (eth_chainId)
+- Ethereum RPC (eth_chainId, eth_blockNumber, eth_getBalance)
+- **Current Synced Block (D Chain):** Shows the latest block number in both hex and decimal **after bootstrapping is complete**
 
 The script works for both public and private RPC modes:
 - If RPC is public, it tests from your host.
@@ -138,6 +139,11 @@ chmod +x test-node.sh
 
 - Works on Linux, macOS, and WSL.
 - Run with `-h` or `--help` for usage info.
+
+**Note:**
+- While the node is bootstrapping, chain-specific RPCs (like `eth_blockNumber`, `eth_chainId`, `eth_getBalance`) will return errors or empty responses (e.g., "API call rejected because chain is not done bootstrapping").
+- Once bootstrapping is complete (`isBootstrapped:true`), these RPCs will return real data.
+- You can monitor your node logs for progress, or keep running the script until you see real block numbers and data.
 
 ## Verifying Your Node: Testing RPC Access
 
