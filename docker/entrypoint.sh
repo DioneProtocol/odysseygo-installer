@@ -53,16 +53,27 @@ mkdir -p "$NETWORK_DB_DIR"
 # If the local bootstrap file is not present and BOOTSTRAP_URL is provided,
 # download the file from the URL to the expected location.
 if [ ! -f "$BOOTSTRAP_ZIP" ] && [ -n "$BOOTSTRAP_URL" ]; then
-    echo "Downloading bootstrap data from $BOOTSTRAP_URL ..."
-    # Using curl for downloading; you can also use wget if preferred.
-    curl -fsSL "$BOOTSTRAP_URL" -o "$BOOTSTRAP_ZIP"
+    echo "============================================="
+    echo "BOOTSTRAP: Starting download process"
+    echo "Network: $NETWORK"
+    echo "URL: $BOOTSTRAP_URL"
+    echo "Destination: $BOOTSTRAP_ZIP"
+    echo "============================================="
+    
+    # Show download progress with curl
+    echo "Downloading bootstrap data..."
+    curl --progress-bar -L "$BOOTSTRAP_URL" -o "$BOOTSTRAP_ZIP"
     if [ $? -ne 0 ]; then
-      echo "Error: Failed to download bootstrap file from $BOOTSTRAP_URL"
+      echo "ERROR: Failed to download bootstrap file from $BOOTSTRAP_URL"
       exit 1
     fi
-    echo "Bootstrap download completed successfully!"
+    
+    # Show file size
+    BOOTSTRAP_SIZE=$(du -h "$BOOTSTRAP_ZIP" | cut -f1)
+    echo "✓ Bootstrap download completed successfully! (${BOOTSTRAP_SIZE})"
+    echo "============================================="
 else
-    echo "Bootstrap file already exists or URL not provided, skipping download."
+    echo "BOOTSTRAP: File already exists or URL not provided, skipping download."
 fi
 
 # Define the bootstrap flag file within the network DB folder.
@@ -71,18 +82,42 @@ BOOTSTRAP_DONE="${NETWORK_DB_DIR}/.bootstrap_done"
 # Check if bootstrap extraction has already been performed.
 if [ ! -f "$BOOTSTRAP_DONE" ]; then
     if [ -f "$BOOTSTRAP_ZIP" ]; then
-        echo "Extracting bootstrap data into ${DB_DIR}..."
-        # Optionally: clean up any existing incomplete data:
-        # rm -rf "${NETWORK_DB_DIR:?}"/*
+        echo "============================================="
+        echo "BOOTSTRAP: Starting extraction process"
+        echo "Source: $BOOTSTRAP_ZIP"
+        echo "Destination: ${DB_DIR}"
+        echo "============================================="
+        
+        # Ensure unzip is available
+        if ! command -v unzip >/dev/null 2>&1; then
+            echo "Installing unzip package..."
+            apt-get update >/dev/null 2>&1
+            apt-get install -y unzip >/dev/null 2>&1
+        fi
+        
+        # Show extraction progress
+        echo "Extracting bootstrap data (this may take a moment)..."
         unzip -q "$BOOTSTRAP_ZIP" -d "${DB_DIR}"
-        # The zip file should include its own subfolder (mainnet/v1.4.5 or testnet/v1.4.5)
+        if [ $? -ne 0 ]; then
+            echo "ERROR: Failed to extract bootstrap data"
+            exit 1
+        fi
+        
+        # Create completion flag
         touch "$BOOTSTRAP_DONE"
-        echo "Bootstrap extraction completed."
+        
+        # Show completion with directory size
+        DB_SIZE=$(du -sh "$NETWORK_DB_DIR" | cut -f1)
+        echo "✓ Bootstrap extraction completed successfully!"
+        echo "Database size: ${DB_SIZE}"
+        echo "============================================="
     else
-        echo "No bootstrap zip found at $BOOTSTRAP_ZIP, continuing without bootstrapping."
+        echo "BOOTSTRAP: No zip file found at $BOOTSTRAP_ZIP, continuing without bootstrapping."
     fi
 else
-    echo "Bootstrap previously performed; skipping extraction."
+    echo "BOOTSTRAP: Previously completed, skipping extraction."
+    DB_SIZE=$(du -sh "$NETWORK_DB_DIR" | cut -f1 2>/dev/null || echo "unknown")
+    echo "Current database size: ${DB_SIZE}"
 fi
 
 ##############################
@@ -241,7 +276,10 @@ create_dchain_config
 # Construct the OdysseyGo command
 CMD="/odysseygo/odyssey-node/odysseygo --http-allowed-hosts=* --config-file=/odysseygo/.odysseygo/configs/node.json --log-dir=/var/log/odysseygo"
 
-echo "Starting OdysseyGo..."
+echo "============================================="
+echo "BOOTSTRAP PROCESS COMPLETED"
+echo "Starting OdysseyGo node..."
+echo "============================================="
 
 # Execute the command; use exec so that signals are properly propagated.
 exec $CMD
