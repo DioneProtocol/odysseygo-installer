@@ -365,6 +365,62 @@ curl -X POST --data '{"jsonrpc":"2.0","id":1,"method":"info.getNodeID"}' \
    docker-compose restart
    ```
 
+## 🧹 Starting from a Fresh Bootstrap (Clean State)
+
+If you want to ensure your node starts from a completely fresh state (e.g., to re-download the bootstrap and clear all previous data), follow these steps:
+
+### 1. Stop and Remove All Containers
+```bash
+docker-compose down
+```
+
+### 2. Remove All Docker Volumes (Persistent Data)
+```bash
+docker volume prune -f
+```
+
+### 3. Remove All Docker Images (Optional, for a truly clean slate)
+```bash
+docker image prune -a -f
+```
+
+### 4. Remove Any Host Data Folders (if you mounted host directories)
+If you used host-mounted volumes (e.g., `data/` or `logs/`), delete them manually:
+```bash
+rm -rf data/ logs/
+```
+
+### 5. Start Mainnet Node (Fresh Bootstrap)
+Set the network to mainnet (if not already set in your `.env`):
+```bash
+NETWORK=mainnet docker-compose up --build
+```
+
+This will:
+- Download the mainnet bootstrap zip afresh
+- Extract and initialize the node from scratch
+
+**Note:** For testnet, set `NETWORK=testnet` instead.
+
+---
+
+## 🔄 Forcing a Fresh Bootstrap Download (Troubleshooting)
+
+If you want to force the container to re-download the bootstrap file (e.g., if the file is corrupted or you want to reset):
+
+1. Remove the bootstrap file inside the running container:
+   ```bash
+   docker exec <container_name> rm -f /odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip
+   # or for testnet:
+   docker exec <container_name> rm -f /odysseygo-bootstrap/odyssey-bootstrap-testnet.zip
+   ```
+2. Restart the container:
+   ```bash
+   docker-compose restart
+   ```
+
+The container will re-download the bootstrap file on next startup.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
