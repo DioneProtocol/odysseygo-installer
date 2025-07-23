@@ -119,6 +119,26 @@ mkdir -p data/.odysseygo data/db logs
 docker-compose up -d
 ```
 
+## 🧪 Node Health Test Script
+
+A simple script, `test-node.sh`, is included to help you verify your OdysseyGo node is running and healthy. It automatically checks:
+- NodeID
+- O/D chain bootstrapped status
+- Ethereum RPC (eth_chainId)
+
+The script works for both public and private RPC modes:
+- If RPC is public, it tests from your host.
+- If RPC is private, it prompts for your container name and runs tests inside the container.
+
+**Usage:**
+```sh
+chmod +x test-node.sh
+./test-node.sh
+```
+
+- Works on Linux, macOS, and WSL.
+- Run with `-h` or `--help` for usage info.
+
 ## Verifying Your Node: Testing RPC Access
 
 After starting your node, you may want to verify it’s running and accessible. The OdysseyGo node’s RPC API (port 9650) can be set to either public or private access. This affects how you can interact with the node for testing, scripting, and integration.
