@@ -5,7 +5,7 @@ services:
     restart: unless-stopped
     environment:
       - NETWORK=${NETWORK:-mainnet}
-      - BOOTSTRAP_URL=${BOOTSTRAP_URL:-https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip}
+      - BOOTSTRAP_URL=${BOOTSTRAP_URL}
       - RPC_ACCESS=${RPC_ACCESS:-public}
       - STATE_SYNC=${STATE_SYNC:-off}
       - IP_MODE=${IP_MODE:-dynamic}
