@@ -31,17 +31,9 @@ mkdir -p "$DB_DIR"
 if [ "$NETWORK" = "testnet" ]; then
     BOOTSTRAP_ZIP="/odysseygo-bootstrap/odyssey-bootstrap-testnet.zip"
     NETWORK_DB_DIR="${DB_DIR}/testnet"
-    # Set default testnet bootstrap URL if not provided
-    if [ -z "$BOOTSTRAP_URL" ]; then
-        BOOTSTRAP_URL="https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-testnet.zip"
-    fi
 elif [ "$NETWORK" = "mainnet" ]; then
     BOOTSTRAP_ZIP="/odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip"
     NETWORK_DB_DIR="${DB_DIR}/mainnet"
-    # Set default mainnet bootstrap URL if not provided
-    if [ -z "$BOOTSTRAP_URL" ]; then
-        BOOTSTRAP_URL="https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip"
-    fi
 else
     echo "Invalid NETWORK value: '$NETWORK'. Allowed values are 'testnet' or 'mainnet'."
     exit 1
@@ -52,6 +44,7 @@ mkdir -p "$NETWORK_DB_DIR"
 
 # If the local bootstrap file is not present and BOOTSTRAP_URL is provided,
 # download the file from the URL to the expected location.
+# Note: Empty BOOTSTRAP_URL means no bootstrap download (start fresh)
 if [ ! -f "$BOOTSTRAP_ZIP" ] && [ -n "$BOOTSTRAP_URL" ]; then
     echo "============================================="
     echo "BOOTSTRAP: Starting download process"
@@ -73,7 +66,11 @@ if [ ! -f "$BOOTSTRAP_ZIP" ] && [ -n "$BOOTSTRAP_URL" ]; then
     echo "✓ Bootstrap download completed successfully! (${BOOTSTRAP_SIZE})"
     echo "============================================="
 else
-    echo "BOOTSTRAP: File already exists or URL not provided, skipping download."
+    if [ -z "$BOOTSTRAP_URL" ]; then
+        echo "BOOTSTRAP: No URL provided, skipping bootstrap download (will sync from scratch)."
+    else
+        echo "BOOTSTRAP: File already exists, skipping download."
+    fi
 fi
 
 # Define the bootstrap flag file within the network DB folder.
