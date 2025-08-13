@@ -1,6 +1,8 @@
 services:
   odysseygo:
-    image: dionetech/odysseygo:develop
+    build:
+      context: .
+      dockerfile: Dockerfile
     user: root
     restart: unless-stopped
     environment:

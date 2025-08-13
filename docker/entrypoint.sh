@@ -45,7 +45,7 @@ mkdir -p "$NETWORK_DB_DIR"
 # If the local bootstrap file is not present and BOOTSTRAP_URL is provided,
 # download the file from the URL to the expected location.
 # Note: Empty BOOTSTRAP_URL means no bootstrap download (start fresh)
-if [ ! -f "$BOOTSTRAP_ZIP" ] && [ -n "$BOOTSTRAP_URL" ]; then
+if [ -n "$BOOTSTRAP_URL" ] && [ ! -f "$BOOTSTRAP_ZIP" ]; then
     echo "============================================="
     echo "BOOTSTRAP: Starting download process"
     echo "Network: $NETWORK"
@@ -65,12 +65,12 @@ if [ ! -f "$BOOTSTRAP_ZIP" ] && [ -n "$BOOTSTRAP_URL" ]; then
     BOOTSTRAP_SIZE=$(du -h "$BOOTSTRAP_ZIP" | cut -f1)
     echo "✓ Bootstrap download completed successfully! (${BOOTSTRAP_SIZE})"
     echo "============================================="
+elif [ -z "$BOOTSTRAP_URL" ]; then
+    echo "BOOTSTRAP: No URL provided, skipping bootstrap download (will sync from scratch)."
+    # Set BOOTSTRAP_ZIP to empty to prevent extraction attempts
+    BOOTSTRAP_ZIP=""
 else
-    if [ -z "$BOOTSTRAP_URL" ]; then
-        echo "BOOTSTRAP: No URL provided, skipping bootstrap download (will sync from scratch)."
-    else
-        echo "BOOTSTRAP: File already exists, skipping download."
-    fi
+    echo "BOOTSTRAP: File already exists, skipping download."
 fi
 
 # Define the bootstrap flag file within the network DB folder.
@@ -78,7 +78,7 @@ BOOTSTRAP_DONE="${NETWORK_DB_DIR}/.bootstrap_done"
 
 # Check if bootstrap extraction has already been performed.
 if [ ! -f "$BOOTSTRAP_DONE" ]; then
-    if [ -f "$BOOTSTRAP_ZIP" ]; then
+    if [ -n "$BOOTSTRAP_ZIP" ] && [ -f "$BOOTSTRAP_ZIP" ]; then
         echo "============================================="
         echo "BOOTSTRAP: Starting extraction process"
         echo "Source: $BOOTSTRAP_ZIP"
@@ -108,6 +108,8 @@ if [ ! -f "$BOOTSTRAP_DONE" ]; then
         echo "✓ Bootstrap extraction completed successfully!"
         echo "Database size: ${DB_SIZE}"
         echo "============================================="
+    elif [ -z "$BOOTSTRAP_ZIP" ]; then
+        echo "BOOTSTRAP: No bootstrap file specified, continuing without bootstrapping (will sync from scratch)."
     else
         echo "BOOTSTRAP: No zip file found at $BOOTSTRAP_ZIP, continuing without bootstrapping."
     fi
