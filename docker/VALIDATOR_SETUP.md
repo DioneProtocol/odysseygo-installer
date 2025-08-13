@@ -204,7 +204,7 @@ The container will re-download the bootstrap file on next startup.
 
 ## Verifying Your Node: Testing RPC Access
 
-Once your node is running, you’ll want to verify it’s accessible and healthy. The OdysseyGo validator node’s RPC API (port 9650) can be set to either public or private access. This affects how you can interact with the node for testing, scripting, and validator registration.
+Once your node is running, you'll want to verify it's accessible and healthy. The OdysseyGo validator node's RPC API (port 9650) can be set to either public or private access. This affects how you can interact with the node for testing, scripting, and validator registration.
 
 ## 🧪 Testing RPC Access: Public vs Private Modes
 
@@ -236,7 +236,7 @@ curl -s --location --request POST 'http://127.0.0.1:9650/ext/info' \
 - If the container is marked as unhealthy with `RPC_ACCESS=private`, this is expected (the healthcheck can't reach the private RPC from outside). The node is still running fine.
 
 ### OdysseyJS and Other Tools
-- If your scripts/tools (like OdysseyJS) need to connect to the node’s RPC, set `RPC_ACCESS=public` (at least temporarily) or run them inside the container.
+- If your scripts/tools (like OdysseyJS) need to connect to the node's RPC, set `RPC_ACCESS=public` (at least temporarily) or run them inside the container.
 - For validator registration, you may need to temporarily set `RPC_ACCESS=public` or use SSH port forwarding, but always revert to `RPC_ACCESS=private` for production security.
 
 ## ⚠️ CRITICAL: Backup Your Staking Keys
@@ -376,9 +376,96 @@ Save the `nodeID` value for the next step.
 
 You have two options for validator registration:
 
-### Option A: Using OdysseyJS Scripts
+### **Option A: Using OdysseyJS Scripts (Recommended - Clearer Flow)**
 
-#### Prerequisites for OdysseyJS Method
+This approach follows the same clear pattern as the OdysseyJS documentation, making it much easier to follow.
+
+#### **Step 3.1: Environment Setup (Following OdysseyJS's approach)**
+
+**1.1 Clone and Setup OdysseyJS**
+```bash
+# Clone the repository
+git clone https://github.com/DioneProtocol/odjs-int
+cd odjs-int
+
+# Use the setup script (recommended)
+./setup-env.sh
+
+# OR manually copy the template
+cp .env.example .env
+```
+
+**1.2 Configure Your Environment Variables**
+Edit the `.env` file with your specific values:
+```bash
+# Odyssey Node Configuration
+IP=your_node_ip_address
+PORT=9650
+PROTOCOL=http
+NETWORK_ID=5  # Use 5 for testnet, 1 for mainnet
+
+# Transaction-specific variables
+PRIVATE_KEY=your_private_key_here_without_0x_prefix
+WALLET_ADDRESS=your_ethereum_style_wallet_address
+REWARD_ADDRESS=your_ochain_reward_address
+NODE_ID=your_validator_node_id
+DELEGATION_FEE=2
+```
+
+**1.3 Environment Variable Descriptions**
+- **IP**: Your Odyssey node's IP address
+- **PORT**: Your Odyssey node's port (default: 9650)
+- **PROTOCOL**: Connection protocol (http/https)
+- **NETWORK_ID**: Network identifier (1=mainnet, 5=testnet)
+- **PRIVATE_KEY**: Your private key without the "0x" prefix
+- **WALLET_ADDRESS**: Your Ethereum-style wallet address (for D-Chain transactions)
+- **REWARD_ADDRESS**: Your O-Chain address for receiving validator rewards
+- **NODE_ID**: Your validator node ID (format: NodeID-...)
+- **DELEGATION_FEE**: Commission percentage for validator (0-100)
+
+#### **Step 3.2: Run the Scripts (Simple, Direct Commands)**
+
+**2.1 Export Funds from D-Chain to O-Chain**
+```bash
+npx ts-node ./examples/delta/buildExportTx-ochain.ts
+```
+
+**2.2 Import Funds into O-Chain**
+```bash
+npx ts-node ./examples/omegavm/buildImportTx-DChain.ts
+```
+
+**2.3 Add Validator**
+```bash
+npx ts-node ./examples/omegavm/buildAddValidatorTx.ts
+```
+
+#### **Step 3.3: Testing Your Setup**
+```bash
+# Test basic connectivity
+npx ts-node ./examples/info/getNetworkID.ts
+
+# Test cross-chain export (requires sufficient balance)
+npx ts-node ./examples/delta/buildExportTx-ochain.ts
+
+# Test validator setup (requires validator node)
+npx ts-node ./examples/omegavm/buildAddValidatorTx.ts
+```
+
+#### **Key Benefits of This Approach**
+1. **Environment-First Setup**: Set all variables in one `.env` file upfront
+2. **Simple Commands**: Just run the scripts without editing code
+3. **Clear Dependencies**: Each step builds on the previous one
+4. **Testing Built-in**: Easy way to verify each step works
+5. **No Code Changes**: Everything is configured through environment variables
+
+---
+
+### **Option B: Manual Configuration (Advanced - Requires Code Editing)**
+
+This approach requires editing individual script files and is more complex. Only use this if you need custom modifications.
+
+#### Prerequisites for Manual Method
 
 1. Clone the OdysseyJS repository:
 ```bash
@@ -428,7 +515,7 @@ Edit the validator script `odjs-int/examples/omegavm/buildAddValidatorTx.ts`:
 npx ts-node ./examples/omegavm/buildAddValidatorTx.ts
 ```
 
-### Option B: Using Chrome Plugin
+### Option C: Using Chrome Plugin
 
 *Documentation for Chrome plugin method coming soon.*
 

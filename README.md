@@ -1,94 +1,67 @@
-# Odysseygo install script
+# OdysseyGo Installer
 
-## Requirements
-- supported operating systems: 
-    - RHEL (Red Hat Enterprise Linux)
-    - all Debian-based Linux distributions (Debian, mint, Ubuntu, etc.)
-- `curl` - if this package is missing, the script will try to install it
-- `wget` - if this package is missing, the script will try to install it
-- `dnsutils` - if this package is missing, the script will try to install it
-Packages required when using the `--version` flag:
-- `gcc`- if this package is missing, you need to install it yourself
-- `go` - if this package is missing, you need to install it yourself (version >= 1.20.8)
-- `git` - if this package is missing, you need to install it yourself
+A comprehensive installer and setup tool for running OdysseyGo nodes on the Odyssey network.
 
-## Installation Options
+## 🚀 Quick Start
 
-### Option 1: Shell Script Installation (Traditional)
-Use the shell script for direct installation on your system.
+### For Validators (Recommended)
 
-### Option 2: Docker Installation (Recommended)
-For easier setup with automatic bootstrap download, use the Docker option:
+**Quick Setup with OdysseyJS (Easiest Method):**
+```bash
+git clone https://github.com/DioneProtocol/odysseygo-installer/
+cd odysseygo-installer/docker
+
+# Run the automated setup script
+./setup-validator-env.sh
+
+# Start your validator node
+docker-compose up -d
+```
+
+**🎉 That's it!** The setup script automatically:
+- Creates validator-optimized configuration
+- Sets up required directories
+- Provides clear next steps for validator registration
+
+For detailed validator setup instructions, see [docker/VALIDATOR_SETUP.md](docker/VALIDATOR_SETUP.md).
+
+### For Archive Nodes
 
 ```bash
 git clone https://github.com/DioneProtocol/odysseygo-installer/
 cd odysseygo-installer/docker
 
-# Create directories
+# Create required directories
 mkdir -p data/.odysseygo data/db logs
 
-# Start with automatic bootstrap download
+# Start with defaults (archive mode)
 docker-compose up -d
 ```
 
-**🚀 Docker Benefits:**
-- ✅ Automatic bootstrap download and extraction
-- ✅ Isolated environment
-- ✅ Easy configuration via environment variables
-- ✅ Consistent deployment across platforms
+## 📚 Documentation
 
-For detailed Docker documentation, see [docker/README.md](docker/README.md).
+- **[Docker Setup](docker/README.md)** - Complete Docker installation guide
+- **[Validator Setup](docker/VALIDATOR_SETUP.md)** - Step-by-step validator configuration
+- **[Validator Quick Setup](docker/VALIDATOR_ODYSSEYJS_SETUP.md)** - Simplified OdysseyJS-based setup
 
-## Examples
+## 🔧 Features
 
-### For instructions, enter the command:
-```bash
-./odysseygo-installer.sh --help
-```
+- **Automatic Bootstrap Download** - Downloads and extracts bootstrap data automatically
+- **Validator-Optimized** - Fast state sync with minimal storage requirements
+- **Archive Mode Support** - Full blockchain history for data providers
+- **Cross-Platform** - Works on Linux, macOS, and Windows
+- **Environment-Based Configuration** - Easy customization via .env files
 
-### Install the latest release of the odysseygo for the mainnet:
-```bash
-./odysseygo-installer.sh
-```
+## 🆕 What's New
 
-### Install the odysseygo from develop branch for the mainnet:
-```bash
-./odysseygo-installer.sh --version develop
-```
+- **Simplified Validator Setup** - New automated setup scripts for easy validator configuration
+- **OdysseyJS Integration** - Clear, step-by-step validator registration following OdysseyJS patterns
+- **Environment-First Approach** - Set all variables upfront, then run simple commands
 
-### Install the latest release of the odysseygo for the testnet:
-```bash
-./odysseygo-installer.sh --testnet
-```
+## 🤝 Contributing
 
-### Install the odysseygo from develop branch for the testnet:
-```bash
-./odysseygo-installer.sh --testnet --version develop 
-```
+Contributions are welcome! Please feel free to submit a Pull Request.
 
-```
-Usage: ./odysseygo-installer.sh [--list | --help | --reinstall | --remove] [--version <tag>] [--ip dynamic|static|<IP>]
-                     [--rpc private|public] [--archival] [--state-sync on|off] [--index] [--db-dir <path>]
-Options:
-   --help            Shows this message
-   --list            Lists 10 newest versions available to install
-   --reinstall       Run the installer from scratch, overwriting the old service file and node configuration
-   --remove          Remove the system service and OdysseyGo binaries and exit
+## 📄 License
 
-   --version <tag>             Installs <tag> version, default is the latest
-   --ip dynamic|static|<IP>    Uses dynamic, static (autodetect) or provided public IP, will ask if not provided
-   --rpc private|public        Open RPC port (9650) to private or public network interfaces, will ask if not provided
-   --archival                  If provided, will disable state pruning, defaults to pruning enabled
-   --state-sync on|off         If provided explicitly turns D-Chain state sync on or off
-   --index                     If provided, will enable indexer and Index API, defaults to disabled
-   --log-level-node <level>    Node log level, defaults to info
-   --log-level-d-chain <level> D-chain log level, defaults to info
-   --db-dir <path>             Full path to the database directory, defaults to .odysseygo/db
-   --testnet                   Connect to testnet, defaults to mainnet if omitted
-   --admin                     Enable Admin API, defaults to disabled if omitted
-   --eth-debug-rpc             Enable Debug API, defaults to disabled if omitted
-
-Run without any options, script will install or upgrade OdysseyGo to latest available version. Node config
-options for version, ip and others will be ignored when upgrading the node, run with --reinstall to change config.
-Reinstall will not modify the database or NodeID definition, it will overwrite node and chain configs.
-```
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
