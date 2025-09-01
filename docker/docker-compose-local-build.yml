@@ -1,8 +1,9 @@
 services:
   odysseygo:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ${DOCKERHUB_USERNAME:-yourusername}/odysseygo:${IMAGE_TAG:-develop}
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     user: root
     restart: unless-stopped
     environment:
