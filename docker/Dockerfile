@@ -72,13 +72,22 @@ USER odysseygo
 WORKDIR /odysseygo
 
 # Download OdysseyGo binary and verify checksum
-RUN echo "Downloading OdysseyGo version ${ODOMYSGO_VERSION_ARG}" && \
-    echo "https://github.com/DioneProtocol/odysseygo/releases/download/v${ODOMYSGO_VERSION_ARG}/odysseygo-linux-amd64-v${ODOMYSGO_VERSION_ARG}.tar.gz" && \
-    wget -q "https://github.com/DioneProtocol/odysseygo/releases/download/v1.10.11/odysseygo-linux-amd64-v1.10.11.tar.gz" -O odysseygo.tar.gz && \
-    # wget -q "https://github.com/DioneProtocol/odysseygo/releases/download/v${ODOMYSGO_VERSION_ARG}/SHA256SUMS" -O SHA256SUMS && \
-    # echo "$(grep odysseygo-linux-amd64-v${ODOMYSGO_VERSION}.tar.gz SHA256SUMS)" | sha256sum -c - && \
-    tar -xzf odysseygo.tar.gz -C /odysseygo/odyssey-node --strip-components=1 && \
-    rm odysseygo.tar.gz
+# This section will be skipped if LOCAL_BINARY_PATH is provided
+ARG LOCAL_BINARY_PATH=""
+# Copy local binary if provided, otherwise download from GitHub
+COPY --chown=odysseygo:odysseygo ${LOCAL_BINARY_PATH:-dummy} /tmp/local-binary/
+RUN if [ -z "$LOCAL_BINARY_PATH" ]; then \
+        echo "Downloading OdysseyGo version ${ODOMYSGO_VERSION_ARG}" && \
+        echo "https://github.com/DioneProtocol/odysseygo/releases/download/v${ODOMYSGO_VERSION_ARG}/odysseygo-linux-amd64-v${ODOMYSGO_VERSION_ARG}.tar.gz" && \
+        wget -q "https://github.com/DioneProtocol/odysseygo/releases/download/v1.10.11/odysseygo-linux-amd64-v1.10.11.tar.gz" -O odysseygo.tar.gz && \
+        tar -xzf odysseygo.tar.gz -C /odysseygo/odyssey-node --strip-components=1 && \
+        rm odysseygo.tar.gz; \
+    else \
+        echo "Using local binary from $LOCAL_BINARY_PATH" && \
+        mkdir -p /odysseygo/odyssey-node && \
+        cp -r /tmp/local-binary/* /odysseygo/odyssey-node/ && \
+        chmod +x /odysseygo/odyssey-node/odysseygo; \
+    fi
 
 # Optional: If you prefer building from source when a specific version is not available
 # Uncomment the following block if building from source is desired
