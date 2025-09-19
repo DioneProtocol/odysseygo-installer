@@ -34,90 +34,91 @@ if [ "$NETWORK" = "testnet" ]; then
 elif [ "$NETWORK" = "mainnet" ]; then
     BOOTSTRAP_ZIP="/odysseygo-bootstrap/odyssey-bootstrap-mainnet.zip"
     NETWORK_DB_DIR="${DB_DIR}/mainnet"
+elif [ "$NETWORK" = "123456" ]; then
+    BOOTSTRAP_ZIP="/odysseygo-bootstrap/odyssey-bootstrap-123456.zip"
+    NETWORK_DB_DIR="${DB_DIR}/123456"
 else
-    echo "Invalid NETWORK value: '$NETWORK'. Allowed values are 'testnet' or 'mainnet'."
+    echo "Invalid NETWORK value: '$NETWORK'. Allowed values are 'testnet', 'mainnet', or '123456'."
     exit 1
 fi
-
 # Create the network-specific DB folder if it does not exist
 mkdir -p "$NETWORK_DB_DIR"
 
 # If the local bootstrap file is not present and BOOTSTRAP_URL is provided,
 # download the file from the URL to the expected location.
 # Note: Empty BOOTSTRAP_URL means no bootstrap download (start fresh)
-if [ -n "$BOOTSTRAP_URL" ] && [ ! -f "$BOOTSTRAP_ZIP" ]; then
-    echo "============================================="
-    echo "BOOTSTRAP: Starting download process"
-    echo "Network: $NETWORK"
-    echo "URL: $BOOTSTRAP_URL"
-    echo "Destination: $BOOTSTRAP_ZIP"
-    echo "============================================="
+# if [ -n "$BOOTSTRAP_URL" ] && [ ! -f "$BOOTSTRAP_ZIP" ]; then
+#     echo "============================================="
+#     echo "BOOTSTRAP: Starting download process"
+#     echo "Network: $NETWORK"
+#     echo "URL: $BOOTSTRAP_URL"
+#     echo "Destination: $BOOTSTRAP_ZIP"
+#     echo "============================================="
     
-    # Show download progress with curl
-    echo "Downloading bootstrap data..."
-    curl --progress-bar -L "$BOOTSTRAP_URL" -o "$BOOTSTRAP_ZIP"
-    if [ $? -ne 0 ]; then
-      echo "ERROR: Failed to download bootstrap file from $BOOTSTRAP_URL"
-      exit 1
-    fi
+#     # Show download progress with curl
+#     echo "Downloading bootstrap data..."
+#     curl --progress-bar -L "$BOOTSTRAP_URL" -o "$BOOTSTRAP_ZIP"
+#     if [ $? -ne 0 ]; then
+#       echo "ERROR: Failed to download bootstrap file from $BOOTSTRAP_URL"
+#       exit 1
+#     fi
     
-    # Show file size
-    BOOTSTRAP_SIZE=$(du -h "$BOOTSTRAP_ZIP" | cut -f1)
-    echo "✓ Bootstrap download completed successfully! (${BOOTSTRAP_SIZE})"
-    echo "============================================="
-elif [ -z "$BOOTSTRAP_URL" ]; then
-    echo "BOOTSTRAP: No URL provided, skipping bootstrap download (will sync from scratch)."
-    # Set BOOTSTRAP_ZIP to empty to prevent extraction attempts
-    BOOTSTRAP_ZIP=""
-else
-    echo "BOOTSTRAP: File already exists, skipping download."
-fi
-
+#     # Show file size
+#     BOOTSTRAP_SIZE=$(du -h "$BOOTSTRAP_ZIP" | cut -f1)
+#     echo "✓ Bootstrap download completed successfully! (${BOOTSTRAP_SIZE})"
+#     echo "============================================="
+# elif [ -z "$BOOTSTRAP_URL" ]; then
+#     echo "BOOTSTRAP: No URL provided, skipping bootstrap download (will sync from scratch)."
+#     # Set BOOTSTRAP_ZIP to empty to prevent extraction attempts
+#     BOOTSTRAP_ZIP=""
+# else
+#     echo "BOOTSTRAP: File already exists, skipping download."
+# fi
 # Define the bootstrap flag file within the network DB folder.
 BOOTSTRAP_DONE="${NETWORK_DB_DIR}/.bootstrap_done"
 
 # Check if bootstrap extraction has already been performed.
-if [ ! -f "$BOOTSTRAP_DONE" ]; then
-    if [ -n "$BOOTSTRAP_ZIP" ] && [ -f "$BOOTSTRAP_ZIP" ]; then
-        echo "============================================="
-        echo "BOOTSTRAP: Starting extraction process"
-        echo "Source: $BOOTSTRAP_ZIP"
-        echo "Destination: ${DB_DIR}"
-        echo "============================================="
+# if [ ! -f "$BOOTSTRAP_DONE" ]; then
+#     if [ -n "$BOOTSTRAP_ZIP" ] && [ -f "$BOOTSTRAP_ZIP" ]; then
+#         echo "============================================="
+#         echo "BOOTSTRAP: Starting extraction process"
+#         echo "Source: $BOOTSTRAP_ZIP"
+#         echo "Destination: ${DB_DIR}"
+#         echo "============================================="
         
-        # Ensure unzip is available
-        if ! command -v unzip >/dev/null 2>&1; then
-            echo "Installing unzip package..."
-            apt-get update >/dev/null 2>&1
-            apt-get install -y unzip >/dev/null 2>&1
-        fi
+#         # Ensure unzip is available
+#         if ! command -v unzip >/dev/null 2>&1; then
+#             echo "Installing unzip package..."
+#             apt-get update >/dev/null 2>&1
+#             apt-get install -y unzip >/dev/null 2>&1
+#         fi
         
-        # Show extraction progress
-        echo "Extracting bootstrap data (this may take a moment)..."
-        unzip -q "$BOOTSTRAP_ZIP" -d "${DB_DIR}"
-        if [ $? -ne 0 ]; then
-            echo "ERROR: Failed to extract bootstrap data"
-            exit 1
-        fi
+#         # Show extraction progress
+#         echo "Extracting bootstrap data (this may take a moment)..."
+#         unzip -q "$BOOTSTRAP_ZIP" -d "${DB_DIR}"
+#         if [ $? -ne 0 ]; then
+#             echo "ERROR: Failed to extract bootstrap data"
+#             exit 1
+#         fi
         
-        # Create completion flag
-        touch "$BOOTSTRAP_DONE"
+#         # Create completion flag
+#         touch "$BOOTSTRAP_DONE"
         
-        # Show completion with directory size
-        DB_SIZE=$(du -sh "$NETWORK_DB_DIR" | cut -f1)
-        echo "✓ Bootstrap extraction completed successfully!"
-        echo "Database size: ${DB_SIZE}"
-        echo "============================================="
-    elif [ -z "$BOOTSTRAP_ZIP" ]; then
-        echo "BOOTSTRAP: No bootstrap file specified, continuing without bootstrapping (will sync from scratch)."
-    else
-        echo "BOOTSTRAP: No zip file found at $BOOTSTRAP_ZIP, continuing without bootstrapping."
-    fi
-else
-    echo "BOOTSTRAP: Previously completed, skipping extraction."
-    DB_SIZE=$(du -sh "$NETWORK_DB_DIR" | cut -f1 2>/dev/null || echo "unknown")
-    echo "Current database size: ${DB_SIZE}"
-fi
+#         # Show completion with directory size
+#         DB_SIZE=$(du -sh "$NETWORK_DB_DIR" | cut -f1)
+#         echo "✓ Bootstrap extraction completed successfully!"
+#         echo "Database size: ${DB_SIZE}"
+#         echo "============================================="
+#     elif [ -z "$BOOTSTRAP_ZIP" ]; then
+#         echo "BOOTSTRAP: No bootstrap file specified, continuing without bootstrapping (will sync from scratch)."
+#     else
+#         echo "BOOTSTRAP: No zip file found at $BOOTSTRAP_ZIP, continuing without bootstrapping."
+#     fi
+# else
+#     echo "BOOTSTRAP: Previously completed, skipping extraction."
+#     DB_SIZE=$(du -sh "$NETWORK_DB_DIR" | cut -f1 2>/dev/null || echo "unknown")
+#     echo "Current database size: ${DB_SIZE}"
+# fi
 
 ##############################
 # END: Bootstrap Extraction
@@ -168,8 +169,10 @@ create_node_config() {
         config=$(echo "$config" | jq '. + { "network-id": "testnet" }')
     elif [ "$NETWORK" = "mainnet" ]; then
         config=$(echo "$config" | jq '. + { "network-id": "mainnet" }')
+    elif [ "$NETWORK" = "123456" ]; then
+        config=$(echo "$config" | jq '. + { "network-id": "123456" }')
     else
-        echo "Invalid NETWORK value: '$NETWORK'. Allowed values are 'testnet' or 'mainnet'."
+        echo "Invalid NETWORK value: '$NETWORK'. Allowed values are 'testnet', 'mainnet', or '123456'."
         exit 1
     fi
 
@@ -268,12 +271,30 @@ if [[ "$1" == "--help" ]]; then
     exit 0
 fi
 
+echo "7"
+
 # Create configuration files
 create_node_config
 create_dchain_config
 
+echo "$NETWORK"
+
+# "nodeID": "NodeID-3U1wiW73EoAyzepENte1B1DGc6pd6Faxo", "stakingKeyType": "RSA", "nodePOP": {"publicKey":"0x80aff653130c7440332b233f4ae67ee1d1c836510d8fda82abf2de9d414f86a3abec054e68885b5a18c8bf60ada0aaba","proofOfPossession":"0xa770fadef8d95b26d83542284420159cd2c54fbdb9c2340233faf9dfa624f203122433f158fee7651f0338caa296def816268961ce848a7b1634c1ea2f989f93aa872a9ede2ceecde69c2b0e22b05e29070171630e516d695c6728d03e0dd308"},
+
+# sudo docker-compose -f docker-compose-local-binary.yml down
+
 # Construct the OdysseyGo command
 CMD="/odysseygo/odyssey-node/odysseygo --http-allowed-hosts=* --config-file=/odysseygo/.odysseygo/configs/node.json --log-dir=/var/log/odysseygo"
+
+# Only override genesis and bootstraps for custom network 123456/devnet
+if [ "$NETWORK" = "123456" ]; then
+    CMD="$CMD --data-dir=/root/.odysseygo --genesis-file=/root/.odysseygo/genesis_devnet.json --staking-signer-key-file=/root/.odysseygo/staking/signer.key --staking-tls-cert-file=/root/.odysseygo/staking/staker.crt --staking-tls-key-file=/root/.odysseygo/staking/staker.key \ --bootstrap-ips=45.55.93.124:9651,64.225.29.38:9651,104.131.10.25:9651,138.197.97.193:9651 --bootstrap-ids=NodeID-E2iTTFENcZAf1vCrNu8x69Hqba4bsycFT,NodeID-2faB2kyFiQuprQSo33uFZqu1uMKAUVkbF,NodeID-ASTQ4dY3DANkX3H6qimBMQf5ChBb9oSV8,NodeID-BR6Hywx4UAvXWi7DKrp44sVDRh2BFjzw6"
+fi
+
+echo "9"
+
+# able to a DoS attack if your HTTP port is publicly accessible {"host": ""}
+# odysseygo_1  | [09-17|11:27:09.064] INFO node/node.go:1410 initializing node {"version": "odyssey/1.10.10", "nodeID": "NodeID-93EhX9H9AnVqaDUn1WxWvVTiGp59Npxag", "stakingKeyType": "RSA", "nodePOP": {"publicKey":"0x870dd87c6319a9cb4ba10fc5db6a68ddd1e66e1d832bbd7a11ae88402d766c9d3500b683801a928a334e251f4b29580b","proofOfPossession":"
 
 echo "============================================="
 echo "BOOTSTRAP PROCESS COMPLETED"

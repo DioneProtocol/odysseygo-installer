@@ -9,9 +9,9 @@ services:
     user: root
     restart: unless-stopped
     environment:
-      - NETWORK=${NETWORK:-mainnet}
+      - NETWORK=${NETWORK:-123456}
       - BOOTSTRAP_URL=${BOOTSTRAP_URL:-https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip}
-      - RPC_ACCESS=${RPC_ACCESS:-public}
+      - RPC_ACCESS=${RPC_ACCESS:-private}
       - STATE_SYNC=${STATE_SYNC:-off}
       - IP_MODE=${IP_MODE:-dynamic}
       - PUBLIC_IP=${PUBLIC_IP:-0.0.0.0}
@@ -19,14 +19,13 @@ services:
       - LOG_LEVEL_NODE=${LOG_LEVEL_NODE:-info}
       - LOG_LEVEL_DCHAIN=${LOG_LEVEL_DCHAIN:-info}
       - INDEX_ENABLED=${INDEX_ENABLED:-true}
-      - ARCHIVAL_MODE=${ARCHIVAL_MODE:-true}
+      - ARCHIVAL_MODE=${ARCHIVAL_MODE:-false}
       - ADMIN_API=${ADMIN_API:-false}
       - ETH_DEBUG_RPC=${ETH_DEBUG_RPC:-true}
     volumes:
-      - "${PWD}/data/.odysseygo:/root/.odysseygo"
-      - "${PWD}/data/.odysseygo/staking:/root/.odysseygo/staking"
-      - "${PWD}/data/db:/odysseygo/db"
-      - "${PWD}/logs:/var/log/odysseygo"
+      - "./data/.odysseygo:/root/.odysseygo"
+      - "./data/db:/odysseygo/db"
+      - "./logs:/var/log/odysseygo"
     ports:
       - "${RPC_HOST_PORT:-9650}:9650"
       - "${P2P_HOST_PORT:-9651}:9651"
