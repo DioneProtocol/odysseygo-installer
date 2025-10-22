@@ -6,9 +6,11 @@ services:
     #   dockerfile: Dockerfile
     user: root
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - NETWORK=${NETWORK:-mainnet}
-      - BOOTSTRAP_URL=${BOOTSTRAP_URL}
+      - BOOTSTRAP_URL=${BOOTSTRAP_URL:-}
       - RPC_ACCESS=${RPC_ACCESS:-public}
       - STATE_SYNC=${STATE_SYNC:-off}
       - IP_MODE=${IP_MODE:-dynamic}
