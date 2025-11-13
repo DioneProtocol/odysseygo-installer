@@ -1,39 +1,140 @@
 name: Build and Push Docker Image
 
 on:
-  push:
-    branches:
-      - develop  # Trigger on push to main branch
+  # Trigger on repository dispatch from odysseygo release
+  repository_dispatch:
+    types: [odysseygo-release]
+  # Manual trigger with version input
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'OdysseyGo version (e.g., v1.10.11 or 1.10.11). Leave empty for latest.'
+        required: false
+        type: string
+      push_to_registry:
+        description: 'Push to Docker Hub'
+        required: false
+        default: true
+        type: boolean
 
-  workflow_dispatch:  # Allows manual trigger from GitHub Actions UI
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: odysseygo
 
 jobs:
   build-and-push:
-    runs-on: ubuntu-22.04
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to Docker Hub
+        if: github.event.inputs.push_to_registry != 'false' && (github.event_name == 'push' || github.event_name == 'repository_dispatch' || github.event.inputs.push_to_registry == 'true')
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Docker Image
+      - name: Determine version
+        id: version
         run: |
-          docker build \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/odysseygo:develop \
-            ./docker
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            VERSION="${{ github.event.client_payload.version }}"
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+          else
+            VERSION="latest"
+          fi
+          
+          # Normalize version (remove 'v' prefix if present, then add back for tag)
+          VERSION_CLEAN=${VERSION#v}
+          VERSION_TAG="v${VERSION_CLEAN}"
+          
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "version_clean=${VERSION_CLEAN}" >> "$GITHUB_OUTPUT"
+          echo "version_tag=${VERSION_TAG}" >> "$GITHUB_OUTPUT"
+          echo "Determined version: ${VERSION} (tag: ${VERSION_TAG})"
 
-      - name: Push Docker Image to Docker Hub
+      - name: Determine if this is a production release
+        id: is_production
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/odysseygo:develop
+          VERSION="${{ steps.version.outputs.version }}"
+          if [[ "$VERSION" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "is_production=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_production=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ steps.version.outputs.version_tag }},enable=${{ steps.is_production.outputs.is_production == 'true' }}
+            type=raw,value=latest,enable=${{ steps.is_production.outputs.is_production == 'true' }}
+            type=sha,prefix={{branch}}-,format=short
+            type=raw,value={{branch}}-${{ github.sha }}
+
+      - name: Build Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./docker
+          file: ./docker/Dockerfile
+          push: ${{ github.event.inputs.push_to_registry != 'false' && (github.event_name == 'push' || github.event_name == 'repository_dispatch' || github.event.inputs.push_to_registry == 'true') }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            ODOMYSGO_VERSION_ARG=${{ steps.version.outputs.version }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
       - name: Image details confirmation
         run: |
-          echo "Docker Image ${{ secrets.DOCKERHUB_USERNAME }}/odysseygo:develop pushed successfully!"
+          echo "✅ Docker Image built successfully!"
+          echo "Version: ${{ steps.version.outputs.version }}"
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          if [ "${{ github.event.inputs.push_to_registry }}" != "false" ] && ([ "${{ github.event_name }}" = "push" ] || [ "${{ github.event_name }}" = "repository_dispatch" ] || [ "${{ github.event.inputs.push_to_registry }}" = "true" ]); then
+            echo "✅ Image pushed to Docker Hub"
+          else
+            echo "ℹ️  Image not pushed (local build only)"
+          fi
+
+      - name: Notify on success
+        if: success()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#dev-pipeline'
+          webhook_url: ${{ secrets.DIONE_SLACK_WEBHOOK_DEV_PIPELINE_URL }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          text: |
+            ✅ Docker Image Built Successfully
+            Repository: ${{ github.repository }}
+            Version: ${{ steps.version.outputs.version }}
+            Tags: ${{ steps.meta.outputs.tags }}
+            Event: ${{ github.event_name }}
+
+      - name: Notify on failure
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#dev-pipeline'
+          webhook_url: ${{ secrets.DIONE_SLACK_WEBHOOK_DEV_PIPELINE_URL }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+          text: |
+            ❌ Docker Image Build Failed
+            Repository: ${{ github.repository }}
+            Version: ${{ steps.version.outputs.version }}
+            Event: ${{ github.event_name }}
+            Check the logs for details.

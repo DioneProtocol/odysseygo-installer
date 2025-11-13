@@ -268,12 +268,64 @@ if [[ "$1" == "--help" ]]; then
     exit 0
 fi
 
+# Function to load bootstrap nodes from bootstrappers.json
+load_bootstrap_nodes() {
+    local bootstrappers_file="/odysseygo/docker/bootstrappers.json"
+    local bootstrap_ips=""
+    local bootstrap_ids=""
+    
+    # Check if bootstrappers.json exists
+    if [ ! -f "$bootstrappers_file" ]; then
+        echo "Warning: bootstrappers.json not found at $bootstrappers_file, skipping bootstrap nodes"
+        return
+    fi
+    
+    # Extract bootstrap nodes for the current network
+    local network_key="$NETWORK"
+    if [ "$network_key" != "mainnet" ] && [ "$network_key" != "testnet" ]; then
+        echo "Warning: Invalid network '$network_key' for bootstrap nodes, skipping"
+        return
+    fi
+    
+    # Use jq to extract IPs and IDs for the network
+    local nodes_json=$(jq -r ".[\"$network_key\"]" "$bootstrappers_file" 2>/dev/null)
+    
+    if [ -z "$nodes_json" ] || [ "$nodes_json" = "null" ]; then
+        echo "Warning: No bootstrap nodes found for network '$network_key' in bootstrappers.json"
+        return
+    fi
+    
+    # Extract IPs and IDs into comma-separated lists
+    bootstrap_ips=$(echo "$nodes_json" | jq -r '.[].ip' | tr '\n' ',' | sed 's/,$//')
+    bootstrap_ids=$(echo "$nodes_json" | jq -r '.[].id' | tr '\n' ',' | sed 's/,$//')
+    
+    if [ -n "$bootstrap_ips" ] && [ -n "$bootstrap_ids" ]; then
+        echo "Loaded bootstrap nodes for $network_key:"
+        echo "  IPs: $(echo $bootstrap_ips | cut -d',' -f1-3)... (total: $(echo $bootstrap_ips | tr ',' '\n' | wc -l))"
+        echo "  IDs: $(echo $bootstrap_ids | cut -d',' -f1-3)... (total: $(echo $bootstrap_ids | tr ',' '\n' | wc -l))"
+        BOOTSTRAP_IPS_ARG="--bootstrap-ips=$bootstrap_ips"
+        BOOTSTRAP_IDS_ARG="--bootstrap-ids=$bootstrap_ids"
+    else
+        echo "Warning: Failed to extract bootstrap nodes from bootstrappers.json"
+    fi
+}
+
 # Create configuration files
 create_node_config
 create_dchain_config
 
+# Load bootstrap nodes from bootstrappers.json
+BOOTSTRAP_IPS_ARG=""
+BOOTSTRAP_IDS_ARG=""
+load_bootstrap_nodes
+
 # Construct the OdysseyGo command
 CMD="/odysseygo/odyssey-node/odysseygo --http-allowed-hosts=* --config-file=/odysseygo/.odysseygo/configs/node.json --log-dir=/var/log/odysseygo"
+
+# Add bootstrap arguments if available
+if [ -n "$BOOTSTRAP_IPS_ARG" ] && [ -n "$BOOTSTRAP_IDS_ARG" ]; then
+    CMD="$CMD $BOOTSTRAP_IPS_ARG $BOOTSTRAP_IDS_ARG"
+fi
 
 echo "============================================="
 echo "BOOTSTRAP PROCESS COMPLETED"

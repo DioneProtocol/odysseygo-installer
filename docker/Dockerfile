@@ -18,7 +18,8 @@ LABEL maintainer="Vivek Teegalapally <vivek.teega@gmail.com>" \
       description="Docker image for OdysseyGo node with configurable options"
 
 # Define build arguments and environment variables
-ARG ODOMYSGO_VERSION_ARG="1.10.11"
+# Default to latest if not specified (will be overridden in CI/CD)
+ARG ODOMYSGO_VERSION_ARG="latest"
 ENV ODOMYSGO_VERSION=${ODOMYSGO_VERSION_ARG}
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -54,16 +55,19 @@ ENV NETWORK=testnet \
 RUN mkdir -p /odysseygo/odyssey-node \
     /odysseygo/.odysseygo/configs/chains/D \
     /odysseygo/.odysseygo/plugins \
+    /odysseygo/docker \
     /odysseygo/db \
     /var/log/odysseygo
 
-# Copy entrypoint script before switching to non-root user
+# Copy entrypoint script and bootstrappers.json before switching to non-root user
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY bootstrappers.json /odysseygo/docker/bootstrappers.json
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Add a non-root user
 RUN useradd -m odysseygo && \
-    chown -R odysseygo:odysseygo /odysseygo /var/log/odysseygo
+    chown -R odysseygo:odysseygo /odysseygo /var/log/odysseygo && \
+    chmod 644 /odysseygo/docker/bootstrappers.json
 
 # Switch to non-root user
 USER odysseygo
@@ -71,14 +75,32 @@ USER odysseygo
 # Set working directory
 WORKDIR /odysseygo
 
-# Download OdysseyGo binary and verify checksum
-RUN echo "Downloading OdysseyGo version ${ODOMYSGO_VERSION_ARG}" && \
-    echo "https://github.com/DioneProtocol/odysseygo/releases/download/v${ODOMYSGO_VERSION_ARG}/odysseygo-linux-amd64-v${ODOMYSGO_VERSION_ARG}.tar.gz" && \
-    wget -q "https://github.com/DioneProtocol/odysseygo/releases/download/v1.10.11/odysseygo-linux-amd64-v1.10.11.tar.gz" -O odysseygo.tar.gz && \
-    # wget -q "https://github.com/DioneProtocol/odysseygo/releases/download/v${ODOMYSGO_VERSION_ARG}/SHA256SUMS" -O SHA256SUMS && \
-    # echo "$(grep odysseygo-linux-amd64-v${ODOMYSGO_VERSION}.tar.gz SHA256SUMS)" | sha256sum -c - && \
+# Download OdysseyGo binary from GitHub releases
+# Handles both "latest" and version tags (e.g., "v1.10.12" or "1.10.12")
+RUN set -eux; \
+    if [ "${ODOMYSGO_VERSION_ARG}" = "latest" ]; then \
+        VERSION_TAG=$(curl -s https://api.github.com/repos/DioneProtocol/odysseygo/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'); \
+        VERSION=${VERSION_TAG#v}; \
+        DOWNLOAD_URL="https://github.com/DioneProtocol/odysseygo/releases/download/${VERSION_TAG}/odysseygo-linux-amd64-${VERSION_TAG}.tar.gz"; \
+        CHECKSUM_URL="https://github.com/DioneProtocol/odysseygo/releases/download/${VERSION_TAG}/odysseygo-linux-amd64-${VERSION_TAG}.tar.gz.sha256"; \
+    else \
+        VERSION=${ODOMYSGO_VERSION_ARG#v}; \
+        VERSION_TAG="v${VERSION}"; \
+        DOWNLOAD_URL="https://github.com/DioneProtocol/odysseygo/releases/download/${VERSION_TAG}/odysseygo-linux-amd64-${VERSION_TAG}.tar.gz"; \
+        CHECKSUM_URL="https://github.com/DioneProtocol/odysseygo/releases/download/${VERSION_TAG}/odysseygo-linux-amd64-${VERSION_TAG}.tar.gz.sha256"; \
+    fi && \
+    echo "Downloading OdysseyGo version ${VERSION_TAG} from ${DOWNLOAD_URL}" && \
+    wget -q "${DOWNLOAD_URL}" -O odysseygo.tar.gz && \
+    if wget -q "${CHECKSUM_URL}" -O odysseygo.tar.gz.sha256 2>/dev/null; then \
+        echo "Verifying checksum..." && \
+        sha256sum -c odysseygo.tar.gz.sha256 && \
+        rm odysseygo.tar.gz.sha256; \
+    else \
+        echo "Warning: Checksum file not found, skipping verification"; \
+    fi && \
     tar -xzf odysseygo.tar.gz -C /odysseygo/odyssey-node --strip-components=1 && \
-    rm odysseygo.tar.gz
+    rm odysseygo.tar.gz && \
+    echo "Successfully installed OdysseyGo ${VERSION_TAG}"
 
 # Optional: If you prefer building from source when a specific version is not available
 # Uncomment the following block if building from source is desired

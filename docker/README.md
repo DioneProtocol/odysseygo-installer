@@ -36,6 +36,7 @@ A Docker implementation of OdysseyGo node with configurable options for running 
 
 - **🔄 Automatic network detection and bootstrap download**
 - **⚡ Fast startup** with pre-downloaded bootstrap data
+- **🌐 Automatic bootstrap nodes configuration** - Bootstrap IPs and Node IDs loaded from `bootstrappers.json` (single source of truth)
 - Configurable network mode (mainnet/testnet)
 - Public/Private RPC access control
 - Dynamic/Static IP configuration
@@ -295,6 +296,31 @@ The node can be bootstrapped in two ways:
    ```
 
    When a local file is mounted, the system will use it instead of downloading from the URL.
+
+### Bootstrap Nodes Configuration
+
+**🌐 Automatic Bootstrap Nodes** - The Docker image automatically configures bootstrap nodes (IPs and Node IDs) based on the selected network.
+
+- **Single Source of Truth**: Bootstrap nodes are defined in `bootstrappers.json` (included in the Docker image)
+- **Network-Aware**: Automatically loads the correct bootstrap nodes for `mainnet` or `testnet`
+- **No Configuration Required**: Works automatically based on the `NETWORK` environment variable
+- **Easy Updates**: Update `bootstrappers.json` and rebuild the image to update bootstrap nodes
+
+**How it works:**
+1. The `entrypoint.sh` script reads `bootstrappers.json` from `/odysseygo/docker/bootstrappers.json`
+2. Based on the `NETWORK` environment variable (mainnet/testnet), it extracts the appropriate bootstrap nodes
+3. Bootstrap IPs and Node IDs are automatically added as command-line arguments: `--bootstrap-ips` and `--bootstrap-ids`
+
+**Current Bootstrap Nodes:**
+- **Mainnet**: 70 bootstrap nodes (automatically loaded)
+- **Testnet**: 5 bootstrap nodes (automatically loaded)
+
+**To update bootstrap nodes:**
+1. Edit `docker/bootstrappers.json` in the repository
+2. Rebuild the Docker image
+3. The new bootstrap nodes will be automatically used
+
+**Note**: The `bootstrappers.json` file format matches the one in the `odysseygo` repository (`genesis/bootstrappers.json`), ensuring consistency across the ecosystem.
 
 ### Configuration Methods
 
