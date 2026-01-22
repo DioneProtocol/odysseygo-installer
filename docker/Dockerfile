@@ -1,16 +1,5 @@
-# Stage 1: Build (Optional)
-# Uncomment if building from source is needed
-# FROM golang:1.20-alpine AS builder
-# ARG ODOMYSGO_VERSION="1.10.11"
-# ENV ODOMYSGO_VERSION=${ODOMYSGO_VERSION}
-# WORKDIR /build
-# RUN apk add --no-cache git
-# RUN git clone https://github.com/DioneProtocol/odysseygo.git . && \
-#     git checkout tags/v${ODOMYSGO_VERSION} && \
-#     ./scripts/build.sh
-
-# Stage 2: Runtime
-# FROM debian:bullseye-slim
+# Multi-architecture Docker image for OdysseyGo
+# Supports: linux/amd64, linux/arm64
 FROM ubuntu:22.04
 
 # Metadata
@@ -18,7 +7,8 @@ LABEL maintainer="Vivek Teegalapally <vivek.teega@gmail.com>" \
       description="Docker image for OdysseyGo node with configurable options"
 
 # Define build arguments and environment variables
-# Default to latest if not specified (will be overridden in CI/CD)
+# TARGETARCH is automatically set by Docker buildx (amd64 or arm64)
+ARG TARGETARCH
 ARG ODOMYSGO_VERSION_ARG="latest"
 ENV ODOMYSGO_VERSION=${ODOMYSGO_VERSION_ARG}
 ENV DEBIAN_FRONTEND=noninteractive
@@ -77,19 +67,20 @@ WORKDIR /odysseygo
 
 # Download OdysseyGo binary from GitHub releases
 # Handles both "latest" and version tags (e.g., "v1.10.12" or "1.10.12")
+# Automatically selects correct architecture (amd64 or arm64) based on TARGETARCH
 RUN set -eux; \
+    ARCH="${TARGETARCH:-amd64}"; \
+    echo "Building for architecture: ${ARCH}"; \
     if [ "${ODOMYSGO_VERSION_ARG}" = "latest" ]; then \
         VERSION_TAG=$(curl -s https://api.github.com/repos/DioneProtocol/odysseygo/releases/latest | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'); \
         VERSION=${VERSION_TAG#v}; \
-        DOWNLOAD_URL="https://github.com/DioneProtocol/odysseygo/releases/download/${VERSION_TAG}/odysseygo-linux-amd64-${VERSION_TAG}.tar.gz"; \
-        CHECKSUM_URL="https://github.com/DioneProtocol/odysseygo/releases/download/${VERSION_TAG}/odysseygo-linux-amd64-${VERSION_TAG}.tar.gz.sha256"; \
     else \
         VERSION=${ODOMYSGO_VERSION_ARG#v}; \
         VERSION_TAG="v${VERSION}"; \
-        DOWNLOAD_URL="https://github.com/DioneProtocol/odysseygo/releases/download/${VERSION_TAG}/odysseygo-linux-amd64-${VERSION_TAG}.tar.gz"; \
-        CHECKSUM_URL="https://github.com/DioneProtocol/odysseygo/releases/download/${VERSION_TAG}/odysseygo-linux-amd64-${VERSION_TAG}.tar.gz.sha256"; \
     fi && \
-    echo "Downloading OdysseyGo version ${VERSION_TAG} from ${DOWNLOAD_URL}" && \
+    DOWNLOAD_URL="https://github.com/DioneProtocol/odysseygo/releases/download/${VERSION_TAG}/odysseygo-linux-${ARCH}-${VERSION_TAG}.tar.gz"; \
+    CHECKSUM_URL="https://github.com/DioneProtocol/odysseygo/releases/download/${VERSION_TAG}/odysseygo-linux-${ARCH}-${VERSION_TAG}.tar.gz.sha256"; \
+    echo "Downloading OdysseyGo ${VERSION_TAG} for ${ARCH} from ${DOWNLOAD_URL}" && \
     wget -q "${DOWNLOAD_URL}" -O odysseygo.tar.gz && \
     if wget -q "${CHECKSUM_URL}" -O odysseygo.tar.gz.sha256 2>/dev/null; then \
         echo "Verifying checksum..." && \
@@ -100,7 +91,7 @@ RUN set -eux; \
     fi && \
     tar -xzf odysseygo.tar.gz -C /odysseygo/odyssey-node --strip-components=1 && \
     rm odysseygo.tar.gz && \
-    echo "Successfully installed OdysseyGo ${VERSION_TAG}"
+    echo "Successfully installed OdysseyGo ${VERSION_TAG} (${ARCH})"
 
 # Optional: If you prefer building from source when a specific version is not available
 # Uncomment the following block if building from source is desired
