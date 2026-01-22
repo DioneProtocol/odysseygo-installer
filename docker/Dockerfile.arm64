@@ -69,7 +69,7 @@ USER odysseygo
 WORKDIR /odysseygo
 
 # Verify binary
-RUN file /odysseygo/odyssey-node/odysseygo && ls -la /odysseygo/odyssey-node/
+RUN ls -la /odysseygo/odyssey-node/
 
 # Expose necessary ports
 EXPOSE 9650 9651
