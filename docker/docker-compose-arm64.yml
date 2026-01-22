@@ -1,12 +1,6 @@
 services:
   odysseygo:
-    image: ${DOCKERHUB_USERNAME:-yourusername}/odysseygo:${IMAGE_TAG:-arm64}
-    # To build locally instead of pulling:
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.arm64
-    #   args:
-    #     ODOMYSGO_VERSION_ARG: ${ODOMYSGO_VERSION:-latest}
+    image: odysseygo:arm64
     user: root
     restart: unless-stopped
     env_file:
