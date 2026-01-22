@@ -121,7 +121,6 @@ jobs:
         with:
           status: success
           channel: '#dev-pipeline'
-          webhook_url: ${{ secrets.DIONE_SLACK_WEBHOOK_DEV_PIPELINE_URL }}
           fields: repo,message,commit,author,action,eventName,ref,workflow
           text: |
             ✅ Multi-Arch Docker Image Built Successfully
@@ -130,6 +129,8 @@ jobs:
             Platforms: linux/amd64, linux/arm64
             Tags: ${{ steps.meta.outputs.tags }}
             Event: ${{ github.event_name }}
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.DIONE_SLACK_WEBHOOK_DEV_PIPELINE_URL }}
 
       - name: Notify on failure
         if: failure()
@@ -137,7 +138,6 @@ jobs:
         with:
           status: failure
           channel: '#dev-pipeline'
-          webhook_url: ${{ secrets.DIONE_SLACK_WEBHOOK_DEV_PIPELINE_URL }}
           fields: repo,message,commit,author,action,eventName,ref,workflow
           text: |
             ❌ Docker Image Build Failed
@@ -145,3 +145,5 @@ jobs:
             Version: ${{ steps.version.outputs.version }}
             Event: ${{ github.event_name }}
             Check the logs for details.
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.DIONE_SLACK_WEBHOOK_DEV_PIPELINE_URL }}
