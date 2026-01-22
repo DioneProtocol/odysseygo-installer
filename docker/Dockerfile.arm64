@@ -1,0 +1,78 @@
+# ARM64 Docker image for OdysseyGo (Local Binary)
+#
+# Usage:
+#   1. Place your ARM64 binary in this directory as 'odysseygo'
+#   2. Build: docker build -f Dockerfile.arm64 -t odysseygo:arm64 .
+#   3. Run: docker compose -f docker-compose-arm64.yml up -d
+#
+FROM ubuntu:22.04
+
+LABEL maintainer="Vivek Teegalapally <vivek.teega@gmail.com>" \
+      description="Docker image for OdysseyGo node (ARM64)" \
+      architecture="arm64"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install necessary packages
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        curl \
+        wget \
+        ca-certificates \
+        tar \
+        gnupg \
+        jq \
+        build-essential \
+        dnsutils \
+        unzip \
+        && rm -rf /var/lib/apt/lists/*
+
+# Define environment variables
+ENV NETWORK=testnet \
+    RPC_ACCESS=public \
+    STATE_SYNC=on \
+    IP_MODE=dynamic \
+    PUBLIC_IP="0.0.0.0" \
+    LOG_LEVEL_NODE=info \
+    LOG_LEVEL_DCHAIN=info \
+    INDEX_ENABLED=false \
+    ARCHIVAL_MODE=false \
+    ADMIN_API=false \
+    ETH_DEBUG_RPC=false
+
+# Create necessary directories
+RUN mkdir -p /odysseygo/odyssey-node \
+    /odysseygo/.odysseygo/configs/chains/D \
+    /odysseygo/.odysseygo/plugins \
+    /odysseygo/docker \
+    /odysseygo/db \
+    /var/log/odysseygo
+
+# Copy entrypoint script and bootstrappers.json
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY bootstrappers.json /odysseygo/docker/bootstrappers.json
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Copy local ARM64 binary
+COPY odysseygo /odysseygo/odyssey-node/odysseygo
+RUN chmod +x /odysseygo/odyssey-node/odysseygo
+
+# Add a non-root user
+RUN useradd -m odysseygo && \
+    chown -R odysseygo:odysseygo /odysseygo /var/log/odysseygo && \
+    chmod 644 /odysseygo/docker/bootstrappers.json
+
+# Switch to non-root user
+USER odysseygo
+
+# Set working directory
+WORKDIR /odysseygo
+
+# Verify binary
+RUN file /odysseygo/odyssey-node/odysseygo && ls -la /odysseygo/odyssey-node/
+
+# Expose necessary ports
+EXPOSE 9650 9651
+
+# Set the entrypoint
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
