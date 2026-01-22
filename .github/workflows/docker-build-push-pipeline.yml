@@ -85,6 +85,7 @@ jobs:
             type=raw,value=${{ steps.version.outputs.version }}
             type=raw,value=${{ steps.version.outputs.version_tag }},enable=${{ steps.is_production.outputs.is_production == 'true' }}
             type=raw,value=latest,enable=${{ steps.is_production.outputs.is_production == 'true' }}
+            type=raw,value=develop
             type=sha,prefix={{branch}}-,format=short
             type=raw,value={{branch}}-${{ github.sha }}
 
