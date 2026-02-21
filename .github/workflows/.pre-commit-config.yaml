@@ -1,0 +1,10 @@
+# Pre-commit hooks - install with: pre-commit install
+# See https://pre-commit.com and https://github.com/gitleaks/gitleaks
+
+repos:
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+        name: Detect hardcoded secrets (gitleaks)
+
