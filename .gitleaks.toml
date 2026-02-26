@@ -1,0 +1,12 @@
+# Gitleaks config for odysseygo-installer
+# https://github.com/gitleaks/gitleaks#configuration
+# Add allowlist entries here if you need to exclude false positives.
+
+title = "odysseygo-installer gitleaks config"
+
+[allowlist]
+description = "Exclude config and common non-secret paths"
+paths = [
+  '''\.gitleaks\.toml$''',
+  '''\.pre-commit-config\.yaml$''',
+]

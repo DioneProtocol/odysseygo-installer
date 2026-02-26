@@ -1,0 +1,29 @@
+# Scan for hardcoded secrets with gitleaks on push and pull_request.
+# See https://github.com/gitleaks/gitleaks-action
+
+name: Gitleaks
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+  workflow_dispatch:
+
+jobs:
+  gitleaks:
+    name: Scan for secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_CONFIG: .gitleaks.toml
+          # Optional: set for org repos or to enable extra features
+          # GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}

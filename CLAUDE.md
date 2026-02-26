@@ -125,6 +125,7 @@ The Docker setup supports automatic bootstrap from remote URLs:
 
 ## Development Notes
 
+- **Gitleaks**: Secret scanning runs in CI (`.github/workflows/gitleaks.yml`) on push/PR to main, master, and develop. Local pre-commit hook: `pre-commit install` then `pre-commit run gitleaks`. Config: `.gitleaks.toml`.
 - The installer requires `curl`, `wget`, and `dnsutils` packages
 - Building from source requires `git`, `go` (>=1.20.8), and `gcc`
 - RHEL systems require SELinux context adjustments for systemd execution from home directory
