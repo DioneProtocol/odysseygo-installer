@@ -1,5 +1,6 @@
 # Gitleaks test file - DELETE THIS BRANCH AFTER TESTING
 # This file contains dummy secrets to verify the gitleaks CI workflow.
+# (Do not use ...EXAMPLE suffix - gitleaks default config allowlists those.)
 
-AWS_ACCESS_KEY_ID=AKIAIOSFODNN7EXAMPLE
-AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+AWS_ACCESS_KEY_ID=AKIAIOSFODNN7FAKEKEY1
+AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI/K7MDENG/bPxRfiCYFAKEKEY
