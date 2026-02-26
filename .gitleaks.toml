@@ -1,8 +1,11 @@
 # Gitleaks config for odysseygo-installer
 # https://github.com/gitleaks/gitleaks#configuration
-# Add allowlist entries here if you need to exclude false positives.
+# useDefault loads built-in rules; add allowlist entries below for false positives.
 
 title = "odysseygo-installer gitleaks config"
+
+[extend]
+useDefault = true
 
 [allowlist]
 description = "Exclude config and common non-secret paths"
