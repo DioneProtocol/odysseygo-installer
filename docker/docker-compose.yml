@@ -1,6 +1,6 @@
 services:
   odysseygo:
-    image: ${DOCKERHUB_USERNAME:-yourusername}/odysseygo:${IMAGE_TAG:-develop}
+    image: ${DOCKERHUB_USERNAME:-dionetech}/odysseygo:${IMAGE_TAG:-develop}
     # build:
     #   context: .
     #   dockerfile: Dockerfile
