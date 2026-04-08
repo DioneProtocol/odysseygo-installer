@@ -24,6 +24,7 @@ services:
       - "${PWD}/data/.odysseygo:/odysseygo/.odysseygo"
       - "${PWD}/data/db:/odysseygo/db"
       - "${PWD}/logs:/var/log/odysseygo"
+      - "${PWD}/bootstrappers.json:/odysseygo/docker/bootstrappers.json:ro"
     ports:
       - "${RPC_HOST_PORT:-9650}:9650"
       - "${P2P_HOST_PORT:-9651}:9651"
