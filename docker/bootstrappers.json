@@ -299,6 +299,10 @@
     {
       "id": "NodeID-CFRSBqhgf1qcQiBxQ6ZqhFNDFpsqvmz96",
       "ip": "159.195.39.121:9659"
+    },
+    {
+      "id": "NodeID-AvBwxa7J6qfmmvag2Bzb4BLn7uwWkqZC8",
+      "ip": "159.195.38.174:9651"
     }
   ],
   "testnet": [
