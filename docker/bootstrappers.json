@@ -1,10 +1,6 @@
 {
   "mainnet": [
     {
-      "id": "NodeID-HiSA5P3USdUzh36HZpkqMygMewkVcEaCg",
-      "ip": "159.195.39.121:9659"
-    },
-    {
       "id": "NodeID-MtbprT8bv1YBioXVDxhz5WPFUpJcaSD8g",
       "ip": "159.195.38.174:9653"
     },
