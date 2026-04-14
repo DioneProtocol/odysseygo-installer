@@ -60,6 +60,34 @@ A Docker implementation of OdysseyGo node with configurable options for running 
 
 **👉 For complete validator setup instructions, see [VALIDATOR_SETUP.md](VALIDATOR_SETUP.md)**
 
+#### Option A: Using the Setup Script (Easiest)
+
+The fastest way to get a validator running is the included setup script, which creates a validator-optimized `.env` and all required directories in one step.
+
+**Linux/macOS:**
+```bash
+git clone https://github.com/DioneProtocol/odysseygo-installer/
+cd odysseygo-installer/docker
+chmod +x setup-validator-env.sh
+./setup-validator-env.sh
+docker-compose up -d
+```
+
+**Windows:**
+```bat
+git clone https://github.com/DioneProtocol/odysseygo-installer/
+cd odysseygo-installer\docker
+setup-validator-env.bat
+docker-compose up -d
+```
+
+The script will:
+- Create a `.env` file pre-configured for a validator (testnet, state sync on, archival off, RPC private)
+- Create required directories (`data/.odysseygo`, `data/db`, `logs`)
+- Generate a `VALIDATOR_ODYSSEYJS_SETUP.md` quick-start guide for validator registration
+
+#### Option B: Manual Setup
+
 1. Clone the repository:
 ```bash
 git clone https://github.com/DioneProtocol/odysseygo-installer/
@@ -71,7 +99,12 @@ cd odysseygo-installer/docker
 mkdir -p data/.odysseygo data/db logs
 ```
 
-3. Create validator configuration:
+3. Copy the example config and edit as needed:
+```bash
+cp env.example .env
+```
+
+4. Or create a minimal validator configuration directly:
 ```bash
 cat > .env << EOF
 NETWORK=mainnet
@@ -81,7 +114,7 @@ RPC_ACCESS=private
 EOF
 ```
 
-4. Start your validator node (bootstrap will download automatically):
+5. Start your validator node (bootstrap will download automatically):
 ```bash
 docker-compose up -d
 ```
@@ -231,43 +264,45 @@ NETWORK=testnet
 
 ## Configuration
 
-### Default Environment Variables
-
-The following default values are pre-configured in the docker-compose.yml file:
-
-| Variable | Default Value |
-|----------|---------------|
-| NETWORK | mainnet |
-| BOOTSTRAP_URL | Auto-selected based on NETWORK |
-| RPC_ACCESS | public |
-| STATE_SYNC | off |
-| IP_MODE | dynamic |
-| PUBLIC_IP | 0.0.0.0 |
-| DB_DIR | /odysseygo/db |
-| LOG_LEVEL_NODE | info |
-| LOG_LEVEL_DCHAIN | info |
-| INDEX_ENABLED | true |
-| ARCHIVAL_MODE | true |
-| ADMIN_API | false |
-| ETH_DEBUG_RPC | true |
-
 ### Environment Variables Reference
 
-| Variable | Description | Options |
-|----------|-------------|---------|
-| NETWORK | Network to connect to | testnet, mainnet |
-| BOOTSTRAP_URL | URL to download bootstrap data | Any valid URL to .zip file |
-| RPC_ACCESS | RPC access control | public, private |
-| STATE_SYNC | Enable/disable state sync | on, off |
-| IP_MODE | IP configuration mode | dynamic, static |
-| PUBLIC_IP | Node's public IP address | Any valid IPv4 |
-| DB_DIR | Database directory | Any valid path |
-| LOG_LEVEL_NODE | Node log level | debug, info |
-| LOG_LEVEL_DCHAIN | D-Chain log level | debug, info |
-| INDEX_ENABLED | Enable indexing | true, false |
-| ARCHIVAL_MODE | Run as archival node | true, false |
-| ADMIN_API | Enable admin API | true, false |
-| ETH_DEBUG_RPC | Enable Ethereum debug RPC | true, false |
+Use `env.example` as a starting point — copy it to `.env` and edit as needed:
+```bash
+cp env.example .env
+```
+
+#### Instance / Image Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `COMPOSE_PROJECT_NAME` | `odysseygo` | Namespaces containers and networks. Set a unique value per instance when running multiple nodes on the same server. |
+| `DOCKERHUB_USERNAME` | `yourusername` | Docker Hub username to pull the image from. |
+| `IMAGE_TAG` | `develop` | Image tag to use (`develop`, `main`, or a specific version). |
+
+#### Node Configuration Variables
+
+| Variable | Default Value | Options |
+|----------|---------------|---------|
+| `NETWORK` | `mainnet` | `mainnet`, `testnet` |
+| `BOOTSTRAP_URL` | Auto-selected based on `NETWORK` | Any valid URL to a `.zip` file, or empty to sync from scratch |
+| `RPC_ACCESS` | `public` | `public`, `private` |
+| `STATE_SYNC` | `off` | `on`, `off` |
+| `IP_MODE` | `dynamic` | `dynamic`, `static` |
+| `PUBLIC_IP` | `0.0.0.0` | Any valid IPv4 (required when `IP_MODE=static`) |
+| `DB_DIR` | `/odysseygo/db` | Any valid path |
+| `LOG_LEVEL_NODE` | `info` | `info`, `debug` |
+| `LOG_LEVEL_DCHAIN` | `info` | `info`, `debug` |
+| `INDEX_ENABLED` | `true` | `true`, `false` |
+| `ARCHIVAL_MODE` | `true` | `true`, `false` |
+| `ADMIN_API` | `false` | `true`, `false` |
+| `ETH_DEBUG_RPC` | `true` | `true`, `false` |
+
+#### Port Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RPC_HOST_PORT` | `9650` | Host port mapped to the node's HTTP API. Must be unique per instance on the same server. |
+| `P2P_HOST_PORT` | `9651` | Host port mapped to the node's P2P networking. Must be unique per instance on the same server. |
 
 ### Bootstrap Configuration
 
@@ -360,6 +395,47 @@ For temporary changes, you can override variables via the command line:
 NETWORK=mainnet BOOTSTRAP_URL=https://odysseygo-bootstraps.nyc3.cdn.digitaloceanspaces.com/odyssey-bootstrap-mainnet.zip docker-compose up -d
 ```
 
+## Running Multiple Nodes on the Same Server
+
+To run more than one OdysseyGo node on the same server, clone the repo into separate directories and give each instance a unique `COMPOSE_PROJECT_NAME` and port pair.
+
+**Instance 1 (default)** — `~/odysseygo-node1/docker/.env`:
+```
+COMPOSE_PROJECT_NAME=node1
+RPC_HOST_PORT=9650
+P2P_HOST_PORT=9651
+NETWORK=mainnet
+```
+
+**Instance 2** — `~/odysseygo-node2/docker/.env`:
+```
+COMPOSE_PROJECT_NAME=node2
+RPC_HOST_PORT=9652
+P2P_HOST_PORT=9653
+NETWORK=mainnet
+```
+
+Start each instance from its own directory:
+```bash
+cd ~/odysseygo-node1/docker && docker-compose up -d
+cd ~/odysseygo-node2/docker && docker-compose up -d
+```
+
+## Updating to the Latest Image
+
+Use the included `update-to-latest.sh` script to pull the newest image and restart the container in one step:
+
+```bash
+# Update to the default tag (develop)
+./update-to-latest.sh
+
+# Update to a specific tag
+./update-to-latest.sh main
+./update-to-latest.sh v1.4.5
+```
+
+The script reads `DOCKERHUB_USERNAME` from your `.env` file (or defaults to `yourusername` if not set), pulls the new image, and restarts the container.
+
 ## Node Configuration Examples
 
 1. **Default Testnet Node**
@@ -407,15 +483,22 @@ docker-compose restart
 ## Directory Structure
 
 ```
-.
+docker/
 ├── Dockerfile
-├── entrypoint.sh
 ├── docker-compose.yml
-├── .env                 # Optional configuration file
+├── docker-compose-local-build.yml
+├── entrypoint.sh
+├── bootstrappers.json           # Bootstrap node IPs and IDs (single source of truth)
+├── env.example                  # Template for .env — copy and edit
+├── .env                         # Your local config (not committed)
+├── setup-validator-env.sh       # One-step validator setup (Linux/macOS)
+├── setup-validator-env.bat      # One-step validator setup (Windows)
+├── update-to-latest.sh          # Pull latest image and restart
+├── test-local.sh                # Local build and smoke-test script
 ├── data/
-│   ├── .odysseygo/     # Node configuration
-│   └── db/             # Blockchain data
-└── logs/               # Node logs
+│   ├── .odysseygo/              # Node configuration
+│   └── db/                      # Blockchain data
+└── logs/                        # Node logs
 ```
 
 ## Volumes
